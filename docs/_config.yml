@@ -2,17 +2,17 @@ permalink:           pretty
 
 # Setup
 title:               'Deep Learning'
-url:                 https://atcold.github.io/pytorch-Deep-Learning/
-baseurl:             '/pytorch-Deep-Learning'
+url:                 https://shimon-K.github.io/AGI-Course/
+baseurl:             '/AGI-Course'
 homepage_title:      Home
 default_lang:        'en'
 
 # About/contact
 author:
-name:                atcold
+name:                Shimon
 url:                 https://twitter.com/alfcnz
 github:
-  repo:              https://github.com/atcold/pytorch-Deep-Learning/
+  repo:              https://github.com/shimon-K/AGI-Course/
 
 # Custom vars
 version:             dlsp20
