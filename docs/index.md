@@ -12,7 +12,7 @@ lang-ref: home
 | PRACTICA    | Tuesdays 19:10 – 20:00, [GCASL C95](http://library.nyu.edu/services/campus-media/classrooms/gcasl-c95/) |
 | FORUM       | [r/NYU_DeepLearning](https://www.reddit.com/r/NYU_DeepLearning/) |
 | DISCORD     | [NYU DL](https://discord.gg/CthuqsX8Pb) |
-| MATERIAL    | [Google Drive](https://bitly.com/DLSP20), [Notebooks](https://github.com/Atcold/pytorch-Deep-Learning) |
+| MATERIAL    | [Google Drive](https://bitly.com/DLSP20), [Notebooks](https://github.com/shimon-K/AGI-Course) |
 
 
 ## Description
@@ -49,8 +49,8 @@ This course concerns the latest techniques in deep learning and representation l
       <td rowspan="1">Practicum</td>
       <td><a href="en/week01/01-3">Neural nets (NN)</a></td>
       <td>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/01-tensor_tutorial.ipynb">📓</a>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/02-space_stretching.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/01-tensor_tutorial.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/02-space_stretching.ipynb">📓</a>
         <a href="https://www.youtube.com/watch?v=5_qrxVq1kvc">🎥</a>
       </td>
     </tr>
@@ -69,9 +69,9 @@ This course concerns the latest techniques in deep learning and representation l
       <td rowspan="1">Practicum</td>
       <td><a href="en/week02/02-3">NN training</a></td>
       <td>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/slides/01%20-%20Spiral%20classification.pdf">🖥</a>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/04-spiral_classification.ipynb">📓</a>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/05-regression.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/slides/01%20-%20Spiral%20classification.pdf">🖥</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/04-spiral_classification.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/05-regression.ipynb">📓</a>
         <a href="https://www.youtube.com/watch?v=WAn6lip5oWk">🎥</a>
       </td>
     </tr>
@@ -90,8 +90,8 @@ This course concerns the latest techniques in deep learning and representation l
       <td rowspan="1">Practicum</td>
       <td><a href="en/week03/03-3">Natural signals' properties</a></td>
       <td>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/slides/02%20-%20CNN.pdf">🖥</a>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/06-convnet.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/slides/02%20-%20CNN.pdf">🖥</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/06-convnet.ipynb">📓</a>
         <a href="https://youtu.be/kwPWpVverkw">🎥</a>
       </td>
     </tr>
@@ -101,7 +101,7 @@ This course concerns the latest techniques in deep learning and representation l
       <td rowspan="1">Practicum</td>
       <td><a href="en/week04/04-1">1D convolutions</a></td>
       <td>
-        <a href="https://github.com/Atcold/pytorch-Deep-Learning/blob/master/07-listening_to_kernels.ipynb">📓</a>
+        <a href="https://github.com/shimon-K/AGI-Course/blob/master/07-listening_to_kernels.ipynb">📓</a>
         <a href="https://youtu.be/OrBEon3VlQg">🎥</a>
       </td>
     </tr>
