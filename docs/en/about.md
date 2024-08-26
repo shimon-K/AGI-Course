@@ -1,10 +1,10 @@
 ---
-title: Course presentation
+title: About
 lang-ref: about
 ---
 
 
-<!--## Course presentation-->
+## Course presentation
 
 ## In video 
 
