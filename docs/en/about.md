@@ -1,10 +1,9 @@
 ---
-title: About
-lang-ref: about2
+title: Course presentation
+lang-ref: about
 ---
 
 
-# Course presentation
 
 ## In video 
 
