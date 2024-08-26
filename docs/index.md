@@ -23,7 +23,7 @@ More about the course is in <tr><td><a href="en/about.md">About</a></td></tr>.
 
 
 
-<!--
+[comment]: <> (
 
 ## Lectures
 
@@ -338,10 +338,10 @@ More about the course is in <tr><td><a href="en/about.md">About</a></td></tr>.
 </table>
 
 
--->
+)
 
 
-<!--
+[comment]: <> (
 ## People
 
 | Role | Photo | Contact | About |
@@ -369,4 +369,4 @@ Thus the texts in English were written by about 130 people, which has an impact 
 It is possible that there may be some omissions: typing errors, spelling mistakes, etc. If you notice any, we invite you to submit a PR on the [GitHub directory of the site](https://github.com/Atcold/pytorch-Deep-Learning/pulls) specifying with an `[EN]` that it concerns the English translation.
 
 Wishing you a deep reading !
--->
+)
