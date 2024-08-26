@@ -25,6 +25,29 @@ lang-ref: about2
 5. Different Learning Approaches (reinforcement, unsupervised, evolutional, Bayesian, meta-learning, multi-task, …)
 6. Natural Language Processing (text representations, Transformer, computational and language models, semantics)
 
+### Sources of the course
+
+* Books
+  * Copeland, Jack - Artificial Intelligence: A Philosophical Introduction (1993)
+  * Jean-Claude Bringuier - Conversations with Jean Piaget (1977)
+  * Edward de Bono - Parallel/Lateral Thinking (1995)
+  * French, C. C., & Colman, A. M. - Cognitive psychology (1995)
+  * Elizabeth F. Loftus - Visual Perception: An Introduction (2012)
+  * Jeff Hawkins 
+    * On Intelligence (2004)
+    * A Thousand Brains: A New Theory of Intelligence (2021)
+  * Elaine Rich, Kevin Knight - Artificial Intelligence (1991)
+* Online courses 
+  * edX, Coursera, udacity, campus.gov.il
+  * DeepLearning.ai, Microsoft, kdnuggets
+* University courses
+  * Standford
+  * MIT
+  * Technion
+  * Bar-Ilan
+  * More
+    * Caltech, Virginia Tech, Duke, Sherbrooke, NPTEL
+
 
 ## In syllabus PDF file
 
