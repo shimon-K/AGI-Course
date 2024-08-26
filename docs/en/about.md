@@ -1,12 +1,12 @@
 ---
-title: About
+title: Course presentation
 lang-ref: about
 ---
 
 
-## Course presentation
+<!--## Course presentation-->
 
-### In video 
+## In video 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/fu6yT9wpPZc?list=PLvii8t7-YebhvKN09vGfN8-956YDqFIrV" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -15,8 +15,9 @@ lang-ref: about
 [comment]: <> (<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?list=PLLHTzKZzVU9f3kmEta5dlkMXgtD1LxHzT" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>)
 
 
-### In syllabus PDF file
+## In syllabus PDF file
 
-<tr><td><a href="../Syllabus3.pdf">Detailed syllabus of the course.</a></td></tr>
+<a href="../Syllabus3.pdf">Detailed syllabus of the course</a>
+or here:
 
-<object data="../Syllabus3.pdf" width="560" height="1000" type='application/pdf'></object>
+<object data="../Syllabus3.pdf" width="760" height="1000" type='application/pdf'></object>
