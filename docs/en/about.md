@@ -17,4 +17,4 @@ lang-ref: about
 
 ### In syllabus PDF file
 
-<tr><td><a href="Syllabus3.pdf">Detailed syllabus of the course</a></td></tr>.
+<tr><td><a href="../Syllabus3.pdf">Detailed syllabus of the course</a></td></tr>.
