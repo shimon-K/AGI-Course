@@ -6,7 +6,7 @@ lang-ref: about
 
 ## Course presentation
 
-### In video
+### In video 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/fu6yT9wpPZc?list=PLvii8t7-YebhvKN09vGfN8-956YDqFIrV" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
