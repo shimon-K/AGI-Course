@@ -1,23 +1,29 @@
 ---
 layout: default
-title: DEEP LEARNING
-author: Alfredo Canziani
+title: Towards Artificial General Intelligence
+author: Shimon Komarovsky
 lang-ref: home
 ---
 
-**DS-GA 1008 · SPRING 2020 · [NYU CENTER FOR DATA SCIENCE](http://cds.nyu.edu/)**
+<!--**DS-GA 1008 · SPRING 2020 · [NYU CENTER FOR DATA SCIENCE](http://cds.nyu.edu/)**-->
 
-| INSTRUCTORS | Yann LeCun & Alfredo Canziani |
-| LECTURES    | Mondays 16:55 – 18:35, [GCASL C95](http://library.nyu.edu/services/campus-media/classrooms/gcasl-c95/) |
+| INSTRUCTORS | Shimon Komarovsky |
+<!--| LECTURES    | Mondays 16:55 – 18:35, [GCASL C95](http://library.nyu.edu/services/campus-media/classrooms/gcasl-c95/) |
 | PRACTICA    | Tuesdays 19:10 – 20:00, [GCASL C95](http://library.nyu.edu/services/campus-media/classrooms/gcasl-c95/) |
 | FORUM       | [r/NYU_DeepLearning](https://www.reddit.com/r/NYU_DeepLearning/) |
 | DISCORD     | [NYU DL](https://discord.gg/CthuqsX8Pb) |
-| MATERIAL    | [Google Drive](https://bitly.com/DLSP20), [Notebooks](https://github.com/shimon-K/AGI-Course) |
+| MATERIAL    | [Google Drive](https://bitly.com/DLSP20), [Notebooks](https://github.com/shimon-K/AGI-Course) |-->
 
 
 ## Description
 
-This course concerns the latest techniques in deep learning and representation learning, focusing on supervised and unsupervised deep learning, embedding methods, metric learning, convolutional and recurrent nets, with applications to computer vision, natural language understanding, and speech recognition. The prerequisites include: [DS-GA 1001 Intro to Data Science](https://cds.nyu.edu/academics/ms-curriculum/) or a graduate-level machine learning course.
+This is an overview course. Concentrating on the theory of Artificial Intelligence and other related topics, without digging in technical stuff or practice. This is becuase the course is created for AI research, or more specifically for general AI research. Which is foremost is mostly concern about ideas and general principles. First the purpose is to understand them deeply, and then the actual practice is thinking, planning and designing new ideas and new approaches for true AI.
+
+More about the course is in <tr><td><a href="en/about.md">About</a></td></tr>.
+
+
+
+<!--
 
 ## Lectures
 
@@ -332,6 +338,10 @@ This course concerns the latest techniques in deep learning and representation l
 </table>
 
 
+-->
+
+
+<!--
 ## People
 
 | Role | Photo | Contact | About |
@@ -359,3 +369,4 @@ Thus the texts in English were written by about 130 people, which has an impact 
 It is possible that there may be some omissions: typing errors, spelling mistakes, etc. If you notice any, we invite you to submit a PR on the [GitHub directory of the site](https://github.com/Atcold/pytorch-Deep-Learning/pulls) specifying with an `[EN]` that it concerns the English translation.
 
 Wishing you a deep reading !
+-->
