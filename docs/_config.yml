@@ -37,7 +37,7 @@ kramdown:
 
 exclude:
   - jekyllbook
-  - en/index.md
+  - index.md
   - vendor
 
 ################################### English ####################################
