@@ -9,7 +9,7 @@ In the following, we present the course and its motivation. Then, our research a
 
 ## In video 
 
-<iframe width="760" height="315" src="https://www.youtube.com/embed/v3FrCO43lvU" title="Introduction - Course presentation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="760" height="365" src="https://www.youtube.com/embed/v3FrCO43lvU" title="Introduction - Course presentation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 
 ## In summary
@@ -65,7 +65,7 @@ or here:
 # AGI research approach
 
 
-<iframe width="760" height="315" src="https://www.youtube.com/embed/fu6yT9wpPZc?list=PLvii8t7-YebhvKN09vGfN8-956YDqFIrV" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="760" height="365" src="https://www.youtube.com/embed/fu6yT9wpPZc?list=PLvii8t7-YebhvKN09vGfN8-956YDqFIrV" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 [comment]: <> (<iframe width="956" height="538" src="https://www.youtube.com/embed/fu6yT9wpPZc" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>)
 
