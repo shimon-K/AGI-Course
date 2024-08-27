@@ -1,6 +1,6 @@
 ---
 title: Motivation for research
-lang-ref: en
+
 ---
 
 In the following, some motivation for AGI research: a scene from "Conversations with god" 2006 movie.
