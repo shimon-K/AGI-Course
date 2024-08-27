@@ -3,7 +3,7 @@ title: Introduction
 lang-ref: about
 ---
 
-In the following, we present the course and its motivation. Then, our research approach to AGI is presented (see <a href="https://shimon-k.github.io/publications.html#AGI_approach">here</a>).
+In the following, we present the course and its motivation. Then, our research approach to AGI is presented (see <a href="https://shimon-k.github.io/AGI-Course/en/about#AGI_approach">here</a>).
 
 # Course presentation
 
