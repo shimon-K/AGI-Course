@@ -2,7 +2,7 @@
 layout: default
 title: Towards Artificial General Intelligence
 author: Shimon Komarovsky
-lang-ref: about
+
 ---
 
 
