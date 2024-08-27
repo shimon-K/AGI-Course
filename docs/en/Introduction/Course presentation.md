@@ -1,6 +1,6 @@
 ---
 title: Course presentation
-lang-ref: about
+lang-ref: en
 ---
 
 ## In video 

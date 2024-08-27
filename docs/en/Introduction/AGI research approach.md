@@ -1,6 +1,6 @@
 ---
 title: AGI research approach
-lang-ref: about
+lang-ref: en
 ---
 
 
