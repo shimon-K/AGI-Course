@@ -1,11 +1,7 @@
 ---
-title: Introduction
+title: Course presentation
 lang-ref: about
 ---
-
-In the following, we present the course and its motivation. Then, our research approach to AGI is presented (see <a href="https://shimon-k.github.io/AGI-Course/en/about#AGI_approach">here</a>).
-
-# Course presentation
 
 ## In video 
 
@@ -61,12 +57,3 @@ or here:
 <object data="../Syllabus3.pdf" width="760" height="1000" type='application/pdf'></object>
 
 
-<a id="AGI_approach"> </a>
-# AGI research approach
-
-
-<iframe width="760" height="365" src="https://www.youtube.com/embed/fu6yT9wpPZc?list=PLvii8t7-YebhvKN09vGfN8-956YDqFIrV" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
-[comment]: <> (<iframe width="956" height="538" src="https://www.youtube.com/embed/fu6yT9wpPZc" title="Introduction to AGI" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>)
-
-[comment]: <> (<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?list=PLLHTzKZzVU9f3kmEta5dlkMXgtD1LxHzT" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>)

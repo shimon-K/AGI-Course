@@ -42,7 +42,10 @@ exclude:
 
 ################################### English ####################################
 prologues:
-  - path: en/about.md
+  - path: en/Introduction/about.md
+    sections:
+      - path: en/Introduction/Course presentation.md
+      - path: en/Introduction/AGI research approach.md
 chapters:
   - path: en/week01/01.md
     sections:
