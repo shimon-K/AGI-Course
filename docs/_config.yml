@@ -58,6 +58,10 @@ chapters:
       - path: en/Deep Learning/01-2.md
       - path: en/Deep Learning/01-3.md
       - path: en/Deep Learning/01-4.md
+      - path: en/Deep Learning/01-5.md
+      - path: en/Deep Learning/01-6.md
+      - path: en/Deep Learning/01-7.md
+      - path: en/Deep Learning/01-8.md
   - path: en/week02/02.md
     sections:
       - path: en/week02/02-1.md
