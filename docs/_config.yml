@@ -47,11 +47,17 @@ prologues:
       - path: en/Introduction/Course presentation.md
       - path: en/Introduction/AGI research approach.md
 chapters:
-  - path: en/week01/01.md
+  - path: en/Classical AI/01.md
     sections:
-      - path: en/week01/01-1.md
-      - path: en/week01/01-2.md
-      - path: en/week01/01-3.md
+      - path: en/Classical AI/01-1.md
+      - path: en/Classical AI/01-2.md
+      - path: en/Classical AI/01-3.md
+  - path: en/Deep Learning/01.md
+    sections:
+      - path: en/Deep Learning/01-1.md
+      - path: en/Deep Learning/01-2.md
+      - path: en/Deep Learning/01-3.md
+      - path: en/Deep Learning/01-4.md
   - path: en/week02/02.md
     sections:
       - path: en/week02/02-1.md
@@ -119,6 +125,6 @@ chapters:
     sections:
       - path: en/week15/15-1.md
       - path: en/week15/15-2.md
-#epilogues:
-#  - path: chapters/end.md
+epilogues:
+  - path: en/Finale/end.md
 
