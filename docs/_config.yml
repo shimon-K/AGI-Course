@@ -47,11 +47,19 @@ prologues:
       - path: en/Introduction/Course presentation.md
       - path: en/Introduction/AGI research approach.md
 chapters:
+  - path: en/Human sciences/01.md
+    sections:
+      - path: en/Human sciences/01-1.md
+      - path: en/Human sciences/01-2.md
+      - path: en/Human sciences/01-3.md
+      - path: en/Human sciences/01-4.md
   - path: en/Classical AI/01.md
     sections:
       - path: en/Classical AI/01-1.md
       - path: en/Classical AI/01-2.md
       - path: en/Classical AI/01-3.md
+      - path: en/Classical AI/01-4.md
+      - path: en/Classical AI/01-5.md
   - path: en/Deep Learning/01.md
     sections:
       - path: en/Deep Learning/01-1.md
@@ -62,73 +70,8 @@ chapters:
       - path: en/Deep Learning/01-6.md
       - path: en/Deep Learning/01-7.md
       - path: en/Deep Learning/01-8.md
-  - path: en/week02/02.md
-    sections:
-      - path: en/week02/02-1.md
-      - path: en/week02/02-2.md
-      - path: en/week02/02-3.md
-  - path: en/week03/03.md
-    sections:
-      - path: en/week03/03-1.md
-      - path: en/week03/03-2.md
-      - path: en/week03/03-3.md
-  - path: en/week04/04.md
-    sections:
-      - path: en/week04/04-1.md
-  - path: en/week05/05.md
-    sections:
-      - path: en/week05/05-1.md
-      - path: en/week05/05-2.md
-      - path: en/week05/05-3.md
-  - path: en/week06/06.md
-    sections:
-      - path: en/week06/06-1.md
-      - path: en/week06/06-2.md
-      - path: en/week06/06-3.md
-  - path: en/week07/07.md
-    sections:
-      - path: en/week07/07-1.md
-      - path: en/week07/07-2.md
-      - path: en/week07/07-3.md
-  - path: en/week08/08.md
-    sections:
-      - path: en/week08/08-1.md
-      - path: en/week08/08-2.md
-      - path: en/week08/08-3.md
-  - path: en/week09/09.md
-    sections:
-      - path: en/week09/09-1.md
-      - path: en/week09/09-2.md
-      - path: en/week09/09-3.md
-  - path: en/week10/10.md
-    sections:
-      - path: en/week10/10-1.md
-      - path: en/week10/10-2.md
-      - path: en/week10/10-3.md
-  - path: en/week11/11.md
-    sections:
-      - path: en/week11/11-1.md
-      - path: en/week11/11-2.md
-      - path: en/week11/11-3.md
-  - path: en/week12/12.md
-    sections:
-      - path: en/week12/12-1.md
-      - path: en/week12/12-2.md
-      - path: en/week12/12-3.md
-  - path: en/week13/13.md
-    sections:
-      - path: en/week13/13-1.md
-      - path: en/week13/13-2.md
-      - path: en/week13/13-3.md
-  - path: en/week14/14.md
-    sections:
-      - path: en/week14/14-1.md
-      - path: en/week14/14-2.md
-      - path: en/week14/14-3.md
-  - path: en/week15/15.md
-    sections:
-      - path: en/week15/15-1.md
-      - path: en/week15/15-2.md
+      - path: en/Deep Learning/01-9.md
+      - path: en/Deep Learning/01-10.md
 epilogues:
   - path: en/Finale/end.md
 
