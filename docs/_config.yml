@@ -45,6 +45,7 @@ prologues:
   - path: en/Introduction/about.md
     sections:
       - path: en/Introduction/Course presentation.md
+      - path: en/Introduction/Understanding.md
       - path: en/Introduction/AGI research approach.md
 chapters:
   - path: en/Human sciences/01.md
