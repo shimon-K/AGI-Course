@@ -12,5 +12,7 @@ Our course is similar in this regard. It it also about deep unerstanding of _obj
 
 _shallow_ learning often presents _objects_ as seperate and express usually only one facet of the _object_. _Deep_ learning, on the other hand, exhibit the inter-relation among differnet _objects_, that often presumed not connected. Additionally, it reveals many facets, of this _object_, thus expending the overall perception of it. It allows us to see "the bigger picture".
 
+<b>Unfortunately, _shallow_ courses are very mechanistic and technical. It is merely (or mostly) about introducing some tool to work with. Which may lead to frustration and bewilderment, since meaning is missing, or the purpose of it all. _Deep_ courses provide this meaning. They sometimes show how very diferrent _objects_ related, or even how they were developed/discovered, and the philosophy behind these _objects_. This generates excitement and great motivation, and exhibits the beauty of the things we learn. For example the symmetry or the harmony of things.</b>
+
 These are the principles that guide us through desgining and developing further this course. More about the philosophy of this course can be found <a href="https://shimon-k.github.io/Teaching.html">here</a>.
 
