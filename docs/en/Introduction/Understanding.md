@@ -14,4 +14,4 @@ _shallow_ learning often presents _objects_ as separate and expresses usually on
 
 <b>Unfortunately, _shallow_ courses are very mechanistic and technical. It is merely (or mostly) about introducing some tool to work with. This may lead to frustration and bewilderment, since meaning is missing, or the purpose of it all. _Deep_ courses provide this meaning. They sometimes show how very different _objects_ are related, or even how they were developed/discovered, and the philosophy behind these _objects_. This generates excitement and great motivation, and exhibits the beauty of the things we learn. For example, the symmetry or the harmony of things.</b>
 
-These are the principles that guide us through designing and developing this course. More about the philosophy of this course can be found <a href="https://shimon-k.github.io/Teaching.html">here</a>.
+These are the principles that guide us through in designing and developing this course. More about the philosophy of this course can be found <a href="https://shimon-k.github.io/Teaching.html">here</a>.
