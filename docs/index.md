@@ -14,7 +14,5 @@ More about the course is in <a href="en/Introduction/about">Introduction</a>.
 
 
 
-Remark: the course is under construction. Hence besides <a href="en/Introduction/about">Introduction</a> only some sections exists: 
-<a href="en/Deep Learning/01-1.md">1.1</a>, <a href="en/Deep Learning/01-2.md">1.2</a>, <a href="en/Deep Learning/01-4.md">1.4</a>.
-
-*<span style="color: red;">This is tilted red text</span>*
+*<span style="color: red; text-decoration: underline;">Remark</span>**<span style="color: red;">: the course is under construction. Hence besides <a href="en/Introduction/about">Introduction</a> only some sections exists: 
+<a href="en/Deep Learning/01-1.md">3.1</a>, <a href="en/Deep Learning/01-2.md">3.2</a>, <a href="en/Deep Learning/01-4.md">3.4</a>.</span>*
