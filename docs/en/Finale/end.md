@@ -17,6 +17,6 @@ Devestated from the chain of events, he fell asleep deprassed.
 
 <iframe width="760" height="365" src="https://www.youtube.com/embed/ybtgzro6Wh0" title="&quot;Conversations with god&quot; 2006 movie inspirational scene" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-The rest is a nice Hollywood-style success: his books being printed in large quantities and great sales. But the most important message is that it actually touched people, and changed their life. Perhaps it feels like a spiritual awakening, where all the accumulated bad life in his life were a deliberate divine plan to teach him a lesson.
+The rest is a nice Hollywood-style success: his books being printed in large quantities and great sales. But the most important message is that it actually touched people, and changed their lives. Perhaps it feels like a spiritual awakening, where all the accumulated bad luck in his life was a deliberate divine plan to teach him a lesson.
 
 <b>The message for us is obvious: don't sell your time and your soul for money and prosperity only. Life are much more full and satisfying when you do what is important to you and you love. Live with passion and higher goal!</b>
