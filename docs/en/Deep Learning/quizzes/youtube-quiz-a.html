@@ -212,7 +212,8 @@ html, body {
   border: 1px solid rgba(255,255,255,0.25);
   padding: 18px 28px;
   z-index: 20;
-  min-width: 260px;
+  width: fit-content;
+  max-width: 90%;
   display: none;
   font-family: 'Courier New', monospace;
   color: #fff;
@@ -223,10 +224,12 @@ html, body {
   font-size: 13px; font-weight: bold; letter-spacing: 2px;
   text-transform: uppercase; margin-bottom: 12px;
   padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);
+  white-space: nowrap;
 }
 .sum-row {
   display: flex; justify-content: space-between; align-items: baseline;
   font-size: 12px; padding: 5px 0; color: rgba(255,255,255,0.75);
+  white-space: nowrap; gap: 20px;
 }
 .sum-row .pct { font-weight: bold; }
 .sum-row .pct.good { color: #27ae60; }
@@ -242,6 +245,7 @@ html, body {
   margin-top: 10px; padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,0.25);
   letter-spacing: 1px;
+  white-space: nowrap; gap: 20px;
 }
 
 /* ── match widget ── */
