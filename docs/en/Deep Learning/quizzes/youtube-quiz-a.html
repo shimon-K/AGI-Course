@@ -79,15 +79,13 @@ html, body {
   background: transparent;
   border: 2px solid #000;
   color: #000;
-  font-family: 'Courier New', monospace;
+  font-family: 'Calibri', 'Carlito', sans-serif;
   font-size: 16px;
   padding: 1px 1px;
   outline: none;
   caret-color: #000;
+  text-align: center;
   text-shadow: none !important;
-    /*0 0 6px rgba(0,0,0,0.95),*/
-    /*0 0 12px rgba(0,0,0,0.8),*/
-    /*1px 1px 0 rgba(0,0,0,0.9);*/
   transition: border-color 0.2s, background 0.2s;
 }
 .q-inp::placeholder {
@@ -98,6 +96,18 @@ html, body {
 .q-inp.ok  { border-color: #27ae60; background: rgba(39,174,96,0.18); }
 .q-inp.no  { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
 .q-inp[readonly] { opacity: 0.6; cursor: default; }
+
+/* ── label type (display-only text over video) ── */
+.q-label-text {
+  font-family: 'Calibri', 'Carlito', sans-serif;
+  font-size: 14px;
+  color: #000;
+  background: transparent;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
 
 #pause-notice {
   position: absolute;
@@ -360,9 +370,17 @@ html, body {
    QUESTION TYPES:
    ───────────────
    Text/Numeric input (default):
-     { x, y, w, ans, tol?, fs? }
-     tol  = optional numeric tolerance (e.g. tol:0.5 means ±0.5)
-     fs   = optional font-size in px (default: inherits from CSS)
+     { x, y, w, ans, tol?, fs?, opacity? }
+     tol     = optional numeric tolerance (e.g. tol:0.5 means ±0.5)
+     fs      = optional font-size in px (default: inherits from CSS)
+     opacity = background opacity 0 to 1 (default: 0 = transparent, 1 = solid white)
+
+   Label (display-only text, not scored):
+     { type:'label', x, y, text, fs?, color?, opacity? }
+     text    = the text to display
+     fs      = font-size in px (default: 14)
+     color   = text color (default: '#000')
+     opacity = background opacity 0 to 1 (default: 0 = transparent, 1 = solid white)
 
    Column matching:
      { type:'match', x, y, w?, fs?, dotSize?, dotGap?,
@@ -456,7 +474,7 @@ var GROUPS = [
     ]
   },
   {
-    time:     237,
+    time:     239,
     maxTries: 3,
     label: 'Matrices and vectors - Ex4',
     questions: [
@@ -473,7 +491,7 @@ var GROUPS = [
     ]
   },
   {
-    time:     249,
+    time:     251,
     maxTries: 3,
     label: 'Matrices and vectors - Ex5',
     questions: [
@@ -495,7 +513,7 @@ var GROUPS = [
     ]
   },
   {
-    time:     265,
+    time:     266,
     maxTries: 3,
     label: 'Matrices and vectors - Ex6',
     questions: [
@@ -517,7 +535,7 @@ var GROUPS = [
     ]
   },
   {
-    time:     276,
+    time:     277,
     maxTries: 3,
     label: 'Matrices and vectors - Ex7',
     questions: [
@@ -538,7 +556,7 @@ var GROUPS = [
     ]
   },
   {
-    time:     376,
+    time:     377,
     maxTries: 3,
     label: 'Norms and Inner products - Ex1',
     questions: [
@@ -591,6 +609,7 @@ GROUPS.forEach(function (g, gi) {
   if (!g.id) g.id = 'g' + gi;
   g.questions.forEach(function (q) {
     if (!q.id) q.id = 'q' + (_qn++);
+    if (q.type === 'label') return;  // labels are not scored
     q.bestCorrect = false;
     if (q.type === 'match') {
       q.userAns = new Array(q.left.length).fill(-1);
@@ -945,6 +964,19 @@ GROUPS.forEach(function (g) {
   g.questions.forEach(function (q) {
     if (q.type === 'match') {
       buildMatchWidget(g, q);
+    } else if (q.type === 'label') {
+      var wrap = document.createElement('div');
+      wrap.className = 'q-wrap';
+      wrap.id = 'w-' + q.id;
+      wrap.style.cssText = 'left:' + q.x + '%;top:' + q.y + '%;';
+      var txt = document.createElement('div');
+      txt.className = 'q-label-text';
+      txt.textContent = q.text || '';
+      if (q.fs) txt.style.fontSize = q.fs + 'px';
+      if (q.color) txt.style.color = q.color;
+      if (typeof q.opacity === 'number') txt.style.background = 'rgba(255,255,255,' + q.opacity + ')';
+      wrap.appendChild(txt);
+      overlay.appendChild(wrap);
     } else {
       var wrap = document.createElement('div');
       wrap.className = 'q-wrap';
@@ -962,6 +994,10 @@ GROUPS.forEach(function (g) {
       inp.placeholder = '\u2026';
       inp.style.width = q.w + 'px';
       if (q.fs) inp.style.fontSize = q.fs + 'px';
+      if (typeof q.opacity === 'number') {
+        inp.style.background = 'rgba(255,255,255,' + q.opacity + ')';
+        inp.dataset.bgOpacity = q.opacity;
+      }
       inp.autocomplete = 'off';
       inp.spellcheck  = false;
       inp.addEventListener('keydown', function (e) {
@@ -992,9 +1028,9 @@ function showGroup(g) {
   pauseVideo();
   document.getElementById('pause-notice').classList.add('on');
 
-  // Focus first non-match input
+  // Focus first non-match, non-label input
   for (var i = 0; i < g.questions.length; i++) {
-    if (g.questions[i].type !== 'match') {
+    if (g.questions[i].type !== 'match' && g.questions[i].type !== 'label') {
       var el = document.getElementById('i-' + g.questions[i].id);
       if (el) { setTimeout(function() { el.focus(); }, 80); }
       break;
@@ -1048,9 +1084,11 @@ function doSubmit(g) {
   g.triesLeft--;
 
   var correct = 0;
-  var total = g.questions.length;
+  var total = 0;
 
   g.questions.forEach(function (q) {
+    if (q.type === 'label') return;  // labels are not scored
+    total++;
     if (q.type === 'match') {
       var box = document.getElementById('mb-' + q.id);
       box.classList.remove('ok', 'no');
@@ -1108,10 +1146,16 @@ function doSubmit(g) {
     btn.disabled = true;
     btn.textContent = 'Done';
     g.questions.forEach(function (q) {
+      if (q.type === 'label') return;
       if (q.type === 'match') {
         document.getElementById('mb-' + q.id).setAttribute('data-locked', '1');
       } else {
-        document.getElementById('i-' + q.id).readOnly = true;
+        var inp = document.getElementById('i-' + q.id);
+        inp.readOnly = true;
+        // Preserve configured background (override readonly dimming)
+        var a = parseFloat(inp.dataset.bgOpacity) || 0;
+        inp.style.background = 'rgba(255,255,255,' + a + ')';
+        inp.style.opacity = '1';
       }
     });
     document.getElementById('ans-' + g.id).classList.add('show');
@@ -1121,6 +1165,7 @@ function doSubmit(g) {
 // ── Show correct answers ──────────────────────────────────────────
 function showAnswers(g) {
   g.questions.forEach(function (q) {
+    if (q.type === 'label') return;
     if (q.type === 'match') {
       // set correct connections and redraw
       q.userAns = q.ans.slice();
@@ -1147,6 +1192,10 @@ function showAnswers(g) {
       inp.value = q.ans;
       inp.classList.remove('no');
       inp.classList.add('ok');
+      // Restore the same background opacity as configured (not dimmed)
+      var a = parseFloat(inp.dataset.bgOpacity) || 0;
+      inp.style.background = 'rgba(255,255,255,' + a + ')';
+      inp.style.opacity = '1';  // override readonly dimming
     }
   });
   document.getElementById('ans-' + g.id).classList.remove('show');
@@ -1159,8 +1208,10 @@ function showSummary() {
 
   GROUPS.forEach(function (g, gi) {
     var groupCorrect = 0;
-    var groupTotal   = g.questions.length;
+    var groupTotal   = 0;
     g.questions.forEach(function (q) {
+      if (q.type === 'label') return;
+      groupTotal++;
       if (q.bestCorrect) groupCorrect++;
     });
 
