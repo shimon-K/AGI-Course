@@ -994,10 +994,9 @@ GROUPS.forEach(function (g) {
       inp.placeholder = '\u2026';
       inp.style.width = q.w + 'px';
       if (q.fs) inp.style.fontSize = q.fs + 'px';
-      if (typeof q.opacity === 'number') {
-        inp.style.background = 'rgba(255,255,255,' + q.opacity + ')';
-        inp.dataset.bgOpacity = q.opacity;
-      }
+      var bgOpacity = (typeof q.opacity === 'number') ? q.opacity : 1;
+      inp.style.background = 'rgba(255,255,255,' + bgOpacity + ')';
+      inp.dataset.bgOpacity = bgOpacity;
       inp.autocomplete = 'off';
       inp.spellcheck  = false;
       inp.addEventListener('keydown', function (e) {
@@ -1153,7 +1152,7 @@ function doSubmit(g) {
         var inp = document.getElementById('i-' + q.id);
         inp.readOnly = true;
         // Preserve configured background (override readonly dimming)
-        var a = parseFloat(inp.dataset.bgOpacity) || 1;
+        var a = inp.dataset.bgOpacity !== undefined ? parseFloat(inp.dataset.bgOpacity) : 1;
         inp.style.background = 'rgba(255,255,255,' + a + ')';
         inp.style.opacity = '1';
       }
@@ -1193,7 +1192,7 @@ function showAnswers(g) {
       inp.classList.remove('no');
       inp.classList.add('ok');
       // Restore the same background opacity as configured (not dimmed)
-      var a = parseFloat(inp.dataset.bgOpacity) || 1;
+      var a = inp.dataset.bgOpacity !== undefined ? parseFloat(inp.dataset.bgOpacity) : 1;
       inp.style.background = 'rgba(255,255,255,' + a + ')';
       inp.style.opacity = '1';  // override readonly dimming
     }
