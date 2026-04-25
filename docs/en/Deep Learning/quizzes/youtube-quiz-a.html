@@ -974,7 +974,7 @@ GROUPS.forEach(function (g) {
       txt.textContent = q.text || '';
       if (q.fs) txt.style.fontSize = q.fs + 'px';
       if (q.color) txt.style.color = q.color;
-      if (typeof q.opacity === 'number') txt.style.background = 'rgba(255,255,255,' + q.opacity + ')';
+      txt.style.background = 'rgba(255,255,255,' + (typeof q.opacity === 'number' ? q.opacity : 1) + ')';
       wrap.appendChild(txt);
       overlay.appendChild(wrap);
     } else {
@@ -1153,7 +1153,7 @@ function doSubmit(g) {
         var inp = document.getElementById('i-' + q.id);
         inp.readOnly = true;
         // Preserve configured background (override readonly dimming)
-        var a = parseFloat(inp.dataset.bgOpacity) || 0;
+        var a = parseFloat(inp.dataset.bgOpacity) || 1;
         inp.style.background = 'rgba(255,255,255,' + a + ')';
         inp.style.opacity = '1';
       }
@@ -1193,7 +1193,7 @@ function showAnswers(g) {
       inp.classList.remove('no');
       inp.classList.add('ok');
       // Restore the same background opacity as configured (not dimmed)
-      var a = parseFloat(inp.dataset.bgOpacity) || 0;
+      var a = parseFloat(inp.dataset.bgOpacity) || 1;
       inp.style.background = 'rgba(255,255,255,' + a + ')';
       inp.style.opacity = '1';  // override readonly dimming
     }
