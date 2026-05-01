@@ -1,29 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YouTube Interactive Quiz</title>
-<link rel="stylesheet" href="youtube-quiz-engine.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
 </head>
 <body>
 
-<div id="header">⬛ Interactive Video Quiz</div>
+<div id="header">⬛ Math for ML - Linear Algebra</div>
 
 <div id="quiz-frame">
   <div id="video-wrap">
-
-    <!-- iframe src is set automatically by the engine from VIDEO_ID -->
-    <iframe id="yt-player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-
+    <iframe id="yt-player" allow="autoplay"></iframe>
     <div id="overlay-layer"></div>
-
-    <div id="pause-notice">▐▐ Video paused — answer the question(s), then press ▶ to continue</div>
-
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
   </div>
 </div>
 
-<div id="footer">Tab between fields · Enter to submit · Press ▶ in the player to resume after answering</div>
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
@@ -226,8 +229,20 @@ var GROUPS = [
 
 </script>
 
-<!-- Shared engine — all quiz logic lives here -->
-<script src="youtube-quiz-engine.js"></script>
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
 
 </body>
 </html>
