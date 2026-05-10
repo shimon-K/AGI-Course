@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — Linear models Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  //duration: 115,
+  autoPlay: false
+};
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 12;
+var POST_QUIZ_DURATION = 15; // Number of seconds after the last question to trigger the summary
+
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+var GROUPS = [
+  {
+    maxTries: 2,
+    label: 'Correlation coefficient',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 11, w: 45,
+        question: 'What does the Pearson correlation coefficient (r) measure?',
+        choices: [
+          'The causal relationship between two variables',
+          'The strength and direction of the linear relationship between two variables',
+          'The average distance between data points',
+          'The probability that two variables are dependent'
+        ],
+        ans: 1
+      },
+      {
+        type: 'cloze', x: 4, y: 52, w: 45,
+        parts: [
+          'If the correlation coefficient r = 0, then the two variables are independent:  ',
+          { blank: true, ans: 'False', w: 88, type: 'select', options: ['True', 'False'] },
+          '.\\nBoth covariance and linear correlation are measures of linear relationship:  ',
+          { blank: true, ans: 'True', w: 88, type: 'select', options: ['True', 'False'] },
+              
+        ]
+      },
+    ],
+    bubbles: [ {
+      text: '✓ The Pearson correlation coefficient r ranges from −1 to +1 and measures the strength and direction of a LINEAR relationship. r = 1 means perfect positive linear correlation, r = −1 means perfect negative, and r = 0 means no linear correlation. Important: r = 0 does NOT imply independence — only the absence of a LINEAR relationship. ',
+              style: 'bubble', tailSize: 20, tail: 'left',
+      x: 51, y: 12, w: 42
+    },
+    {
+      text: '✓ False. r = 0 means the variables are linearly uncorrelated, but they may still have a non-linear dependence. For example, Y = X² has r ≈ 0 when X is symmetric around 0, yet Y is fully determined by X. Independence implies r = 0, but r = 0 does NOT imply independence.\\n✓ True. Correct by definition.',
+              style: 'bubble', tailSize: 20, tail: 'left',
+      x: 51, y: 50, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 2,
+    label: 'Regression objective',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'Linear regression finds the best-fit line by minimizing the sum of ',
+          { blank: true, ans: 'squared', w: 87, type: 'select', options: ['squared', 'absolute', 'the'] },
+          ' errors (also called OLS: Ordinary ',
+          { blank: true, ans: 'Least', w: 87, type: 'select', options: ['Most', 'Least', 'Loss', 'Lowest'] },
+          ' Squares). The solution can be found in ',
+          { blank: true, ans: 'closed', w: 87, type: 'select', options: ['open', 'closed', 'general', 'math'] },
+          '-form.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ Linear regression minimizes the Sum of SQUARED Errors (SSE). The method is called Ordinary LEAST Squares (OLS). Unlike logistic regression which requires iterative optimization, linear regression has a direct CLOSED-form solution: β = (XᵀX)⁻¹Xᵀy.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 35, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Optimization methods',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which optimization method does logistic regression typically use?',
+        choices: [
+          'Closed-form (direct) solution',
+          'Gradient Descent (iterative)',
+          'Random search',
+          'Dynamic programming'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ Logistic regression uses iterative methods like Gradient Descent (or Newton\'s method). Unlike linear regression, the log-likelihood function for logistic regression has no closed-form solution due to the non-linear sigmoid function. The optimization iteratively updates weights in the direction that reduces the loss.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 3,
+    label: '1D Regression',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 10, w: 92,
+        parts: [
+          'Given data: x = [1, 2, 3], y = [2, 3, 4]. The means are x̄ = 2, ȳ = 3. ',
+          'Using the 1D least-squares formula, the slope β₁ = ',
+          { blank: true, ans: '1', w: 50 },
+          ' and the intercept β₀ = ',
+          { blank: true, ans: '1', w: 50 },
+          '. So the fitted model is: ŷ = ',
+          { blank: true, ans: '1', w: 40 },
+          '·x + ',
+          { blank: true, ans: '1', w: 40 },
+          '.'
+        ]
+      },
+      {
+        type: 'slider', x: 4, y: 50, w: 60,
+        question: 'Given ŷ = -3·x + 11, what is ŷ when x = 5?',
+        min: -20, max: 20, step: 1,
+        ans: -4, tol: 0, unit: ''
+      }
+    ],
+    bubbles: [ {
+      text: '✓ Calculation: β₁ = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)² = [(−1)(−1) + (0)(0) + (1)(1)] / [(−1)² + 0² + 1²] = 2/2 = 1. Then β₀ = ȳ − β₁·x̄ = 3 − 1·2 = 1. So ŷ = 1·x + 1. This matches the presentation example on slide 45.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 30, w: 92
+    },
+    {
+      text: '✓ ŷ = -3·(5) + 11 = -4. Simple substitution into the fitted regression equation. This is prediction/inference — using the trained model on new input.',
+              style: 'bubble', tailSize: 20, tail: 'top',tailOffset: 33,
+      x: 4, y: 70, w: 92
+    }
+   ]
+  },
+  {
+    maxTries: 2,
+    label: 'Hyperplane properties',
+    questions: [
+      {
+        type: 'checkbox', x: 4, y: 8, w: 92,
+        question: 'Select ALL true statements about hyperplanes:',
+        choices: [
+          'A hyperplane in 2D is a line',
+          'A hyperplane in 3D is a plane',
+          'The normal vector w is parallel to the hyperplane',
+          'The equation is wᵀx + b = 0',
+          'A hyperplane always passes through the origin'
+        ],
+        ans: [0, 1, 3]
+      }
+    ],
+    bubble: {
+      text: '✓ Correct: A hyperplane in 2D is a line, in 3D is a plane, and the equation is wᵀx + b = 0. The normal vector w is PERPENDICULAR (not parallel) to the hyperplane. A hyperplane passes through the origin only when b = 0.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 45, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Perceptron update rule',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In the perceptron learning algorithm, when is the weight vector updated?',
+        choices: [
+          'After every data point regardless of classification',
+          'Only when a data point is misclassified (y·(w·x+b) ≤ 0)',
+          'Only at the end of each epoch',
+          'When the margin exceeds a threshold'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ The perceptron updates weights ONLY on misclassified points. The update rule is: if y·(wᵀx + b) ≤ 0 (misclassified), then w ← w + y·x and b ← b + y. As shown in the lecture example (slides 48-50), the algorithm iterates through data points and updates only when the current point is on the wrong side.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 3,
+    label: 'Matrix regression',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 5, w: 92,
+        parts: [
+          'Given x₁=[1,1], x₂=[2], x₃=[2] with y=[2,3,1] and using β = (XᵀX)⁻¹Xᵀy with an intercept column, ',
+          'compute XᵀX where X has rows [1,xᵢ₁,xᵢ₂]. The (1,1) element of XᵀX is ',
+          { blank: true, ans: '3', w: 40 },
+          ', the (2,2) element is ',
+          { blank: true, ans: '5', w: 40 },
+          ', and the (3,3) element is ',
+          { blank: true, ans: '5', w: 40 },
+          '.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ X = [[1,1,1],[1, 2],[1, 2]]. XᵀX: (1,1)=1²+1²+1²=3, (2,2)=1²+2²+0²=5, (3,3)=1²+0²+2²=5. This is the start of computing the closed-form solution β=(XᵀX)⁻¹Xᵀy as shown on slide 42-43.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 33, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Gradient descent mechanics',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In gradient descent, what determines the direction of each weight update?',
+        choices: [
+          'The random initialization of weights',
+          'The negative gradient of the loss function with respect to the weights',
+          'The positive gradient of the loss function',
+          'The second derivative (Hessian) of the loss'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ Gradient descent moves in the direction of the NEGATIVE gradient (steepest descent). The update rule is: w ← w − η·∇L(w), where η is the learning rate and ∇L(w) is the gradient of the loss. Moving opposite to the gradient reduces the loss. The learning rate controls the step size.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 38, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label:    'Gradient descent in function',
+    questions: [
+      {
+        type:         'image',
+        x: 55, y: 37,
+        w:            40,
+        h:            48,
+        src:          'GD.png',
+        alt:          '',
+        borderRadius: 8,
+        border:       '1px solid rgba(148,163,184,0.2)',
+        objectFit:    'contain'
+      },
+      {
+        type:     'label',
+        x: 4, y: 10,
+        w:        92,
+        text: 'In the following, answer where will the optimization land given an initial point, and on what type of optimum will it land.',
+        fs:       14
+      },
+      {
+        type: 'cloze', x: 4, y: 18, w: 95,
+        lineSpacing: '3.0',
+        parts: [
+          'For initial point A:  ',
+          { blank: true, ans: 'B', w: 50, type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F'] },
+          ' ,  the optimum type:  ',
+          { blank: true, ans: 'local minimum', w: 190, type: 'select', options: ['local minimum', 'global minimum', 'local maximum', 'global maximum'] },
+          '\\nFor initial point C:  ',
+          { blank: true, ans: 'D', w: 50, type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F'] },
+          ' ,  the optimum type:  ',
+          { blank: true, ans: 'global minimum', w: 190, type: 'select', options: ['local minimum', 'global minimum', 'local maximum', 'global maximum'] },
+          '\\nFor initial point E:  ',
+          { blank: true, ans: 'D', w: 50, type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F'] },
+          '\\nFor initial point F:  ',
+          { blank: true, ans: 'F', w: 50, type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F'] },
+        ]
+      },
+  ],
+    bubble: {
+      text:  '✓ B,D, and F are minimums of the function. D is the global minimum while the rest of points are local minimums. They start from intial points and go down the minus of the gradient, and converge where the gradient is 0 or close to it. If they start near a minimum, e.g. F, they converge to it.',
+      x: 4, y: 60, w: 52,
+              style: 'bubble', tailSize: 20, tail: 'top',
+      bg: 'rgba(15,23,42,0.96)', color: '#fde68a', borderColor: '#f59e0b',
+      borderRadius: 8, fontSize: 13
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Linear models True/False questions',
+    questions: [
+      {
+            type: 'cloze', x: 4, y: 8, w: 94,
+            parts: [
+              '1) Linear regression and linear classification can be described using a hyperplane equation (or a multidimensional line):  ',
+              { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+              '.\\n2) A hyperplane equation is defined as the product of parameters and their corresponding input features:  ',
+              { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+              '.\\n3) In linear regression, parameters are derived from an objective function that we aim to minimize, and these parameters are reached through iterative processes:  ',
+              { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+              '.\\n4) Although Logistic Regression is technically a regression method, its output is utilized for linear classification:  ',
+              { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+              '.\\n5) If two variables are dependent on one another, they are necessarily linearly dependent:  ',
+              { blank: true, ans: 'False', w: 88, type: 'select', options: ['True', 'False'] },
+              '.\\n6) Stopping condition for iterations in linear classification: subset/some of the data points is/are correctly classified:  ',
+              { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+            ]
+       },
+    ],
+    bubble: {
+      text: '✓ 1) True by definition. 2) False. The equation also includes a free parameter, or bias, which allows the hyperplane to represent surfaces that do not necessarily pass through the origin. 3) False. Parameters can be derived directly from the objective function without iterations: by differentiating the function, setting the derivative to zero and solving this, thus obtaining an exact analytical solution for the parameters as a function of the given training data. 4) True by definition. 5) False. Two variables can be dependent through any type of relationship, such as parabolic or polynomial one, and are not restricted to linear dependency only. 6) False. To complete the training process, all data points must be correctly classified. If even a single point is misclassified, the algorithm must continue iterating.',
+              style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 56, w: 96
+    }
+  },
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+
+</body>
+</html>

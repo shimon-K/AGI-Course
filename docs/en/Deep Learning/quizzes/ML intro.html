@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — Introduction</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  //duration: 115,
+  autoPlay: false
+};
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 12;
+var POST_QUIZ_DURATION = 15; // Number of seconds after the last question to trigger the summary
+
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+var GROUPS = [
+  {
+    maxTries: 2,
+    label: 'ML types matching',
+    questions: [
+      {
+        type: 'match', x: 4, y: 8, w: 380, fs: 13,
+        dotSize: 16, dotGap: 14, colGap: 120,
+        left:  ['Supervised Learning', 'Unsupervised Learning', 'Renforcement Learning', 'Semi-Supervised Learning', 'Self-supervised Learning'],
+        right: ['Has inputs and feedback', 'Has inputs and outputs', 'Has inputs only'],
+        ans:   [1,2,0,1,2]
+      },
+    ],
+    bubble: {
+      text: '✓ Supervised Learning has both inputs and outputs in the dataset. Unsupervised Learning has only inputs (no outputs). Reinforcement Learning. Semi-supervised Learning has a dataset containing both inputs as unsupervised learning, but also inputs and outputs as supervised learning. Self-supervised is a branch in supervised learning, but it learns from inputs only.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 52, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'ML types True/False questions',
+    questions: [
+      {
+            type: 'cloze', x: 4, y: 12, w: 90,
+            parts: [
+              '1) In supervised learning, the model is trained and subsequently utilized to generate output for new inputs:  ',
+              { blank: true, ans: 'True', w: 88, type: 'select', options: ['True', 'False'] },
+              '.\\n2) Tasks in unsupervised learning include clustering, dimensionality reduction, and regression:  ',
+              { blank: true, ans: 'False', w: 88, type: 'select', options: ['True', 'False'] },
+              '.\\n3) Predicting house prices is an example of a classification task:  ',
+              { blank: true, ans: 'False', w: 88, type: 'select', options: ['True', 'False'] },
+              '.\\n4) One of the tasks in unsupervised learning is dimensionality reduction:  ',
+              { blank: true, ans: 'True', w: 88, type: 'select', options: ['True', 'False'] },
+            ]
+       },
+    ],
+    bubble: {
+      text: '✓ 1) True. 2) This statement is False, as regression is a supervised learning task. 3) This statement is False, as it is an example of a regression task. 4) This statement is True by definition.',
+              style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 55, w: 92
+    }
+  },
+  
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+
+</body>
+</html>

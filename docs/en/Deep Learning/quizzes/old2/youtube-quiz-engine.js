@@ -17,22 +17,9 @@
      hotspot       { type:'hotspot',  x, y, w, h, src, spots[], ans (index or index[]), fs? }
      slider        { type:'slider',   x, y, w, min, max, step?, ans, tol?, unit?, fs? }
      cloze         { type:'cloze',    x, y, w, parts[], fs?, lineSpacing? }
-                   — parts: mix of strings and { blank, ans, w?, h?, fs?, fontFamily?, type?, options? }
-                   — blank type: 'text' (default), 'select' (dropdown), or 'open' (textarea)
-                   — h (height in px): when set on a blank, renders a textarea for open-ended answers
-                   — open-ended blanks are evaluated via AI after submit (green/red markup)
+                   — parts: mix of strings and { blank, ans, w?, fs?, fontFamily?, type?, options? }
+                   — blank type: 'text' (default) or 'select' (dropdown)
                    — OR template string + blanks array (for LaTeX-embedded blanks)
-
-   AI Assistant (per group):
-     Each question group gets an AI assistant icon that offers:
-       Guide — step-by-step guidance toward the answer
-       Hint  — a short clue without giving the answer away
-       Chat  — free-form dialogue about the questions
-
-   AI Configuration (optional):
-     Default: Pollinations.ai free API (no key required).
-     Override: set AI_CONFIG = { provider, endpoint, model, apiKey }
-       provider: 'pollinations' (default) | 'anthropic' | 'openai'
      combobox      { type:'combobox', x, y, w, options[], ans, fs? }
 
    Bubble attributes (group.bubble or group.bubbles[]):
@@ -331,77 +318,13 @@ function _checkHotspot(q) {
 /** Check cloze & sync DOM values into blanks */
 function _checkCloze(q) {
   var allOk = true;
-  var hasOpenBlanks = false;
   q._blanks.forEach(function (bObj, bi) {
     var el = document.getElementById('cloze-' + q.id + '-' + bi);
     if (!el) { allOk = false; return; }
     bObj.userAns = (el.tagName === 'SELECT' ? el.value : el.value).trim();
-
-    /* open-ended blanks — defer to AI evaluation */
-    if (el.dataset.open === '1') {
-      hasOpenBlanks = true;
-      if (!bObj.userAns) allOk = false;
-      return; /* skip exact-match check */
-    }
-
-    /* short-phrase resemblance (up to 3 words) */
-    var userWords = bObj.userAns.toLowerCase().split(/\s+/).filter(Boolean);
-    var ansWords  = bObj.ans.toLowerCase().split(/\s+/).filter(Boolean);
-    if (ansWords.length <= 3 && userWords.length <= 3) {
-      if (!_resembles(bObj.userAns, bObj.ans)) allOk = false;
-    } else {
-      if (bObj.userAns.toLowerCase() !== bObj.ans.toLowerCase()) allOk = false;
-    }
+    if (bObj.userAns.toLowerCase() !== bObj.ans.toLowerCase()) allOk = false;
   });
-  if (hasOpenBlanks) q._hasOpenBlanks = true;
   return allOk;
-}
-
-/** Fuzzy resemblance check for short phrases (up to 3 words).
-    Uses normalized Levenshtein on each word pair. */
-function _resembles(userStr, correctStr) {
-  var uWords = userStr.toLowerCase().split(/\s+/).filter(Boolean);
-  var cWords = correctStr.toLowerCase().split(/\s+/).filter(Boolean);
-  if (uWords.length !== cWords.length) {
-    /* allow minor word-count difference */
-    if (Math.abs(uWords.length - cWords.length) > 1) return false;
-  }
-  var len = Math.max(uWords.length, cWords.length);
-  var matchCount = 0;
-  var used = {};
-  for (var i = 0; i < uWords.length; i++) {
-    for (var j = 0; j < cWords.length; j++) {
-      if (used[j]) continue;
-      if (_wordSimilarity(uWords[i], cWords[j]) >= 0.7) {
-        matchCount++; used[j] = true; break;
-      }
-    }
-  }
-  return matchCount >= Math.ceil(len * 0.7);
-}
-
-function _wordSimilarity(a, b) {
-  if (a === b) return 1;
-  var maxLen = Math.max(a.length, b.length);
-  if (maxLen === 0) return 1;
-  return 1 - (_levenshtein(a, b) / maxLen);
-}
-
-function _levenshtein(a, b) {
-  var m = a.length, n = b.length;
-  var dp = [];
-  for (var i = 0; i <= m; i++) {
-    dp[i] = [i];
-    for (var j = 1; j <= n; j++) {
-      dp[i][j] = i === 0 ? j :
-        Math.min(
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
-        );
-    }
-  }
-  return dp[m][n];
 }
 
 /** Per-blank feedback colouring */
@@ -409,23 +332,7 @@ function _feedbackCloze(q) {
   q._blanks.forEach(function (bObj, bi) {
     var el = document.getElementById('cloze-' + q.id + '-' + bi);
     if (!el) return;
-
-    /* open-ended blanks — show 'pending' style; AI will update later */
-    if (el.dataset.open === '1') {
-      el.classList.remove('ok', 'no');
-      el.classList.add('ai-pending');
-      return;
-    }
-
-    /* short-phrase resemblance */
-    var uWords = bObj.userAns.toLowerCase().split(/\s+/).filter(Boolean);
-    var aWords = bObj.ans.toLowerCase().split(/\s+/).filter(Boolean);
-    var ok;
-    if (aWords.length <= 3 && uWords.length <= 3) {
-      ok = _resembles(bObj.userAns, bObj.ans);
-    } else {
-      ok = bObj.userAns.toLowerCase() === bObj.ans.toLowerCase();
-    }
+    var ok = bObj.userAns.toLowerCase() === bObj.ans.toLowerCase();
     el.classList.remove('ok', 'no');
     el.classList.add(ok ? 'ok' : 'no');
   });
@@ -1155,22 +1062,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
     return sel;
   }
 
-  /* open-ended textarea (when h is set or type is 'open') */
-  if (cfg.type === 'open' || cfg.h) {
-    var ta = document.createElement('textarea');
-    ta.className = 'q-cloze-input q-cloze-textarea';
-    ta.id = id;
-    ta.style.width  = (cfg.w || 220) + 'px';
-    ta.style.height = (cfg.h || 60) + 'px';
-    if (cfg.fs)         ta.style.fontSize   = cfg.fs + 'px';
-    if (cfg.fontFamily) ta.style.fontFamily = cfg.fontFamily;
-    ta.placeholder  = cfg.placeholder || 'Type your answer\u2026';
-    ta.autocomplete = 'off';
-    ta.spellcheck   = true;
-    ta.dataset.open = '1';
-    return ta;
-  }
-
   /* default: text input */
   var inp = document.createElement('input');
   inp.type      = 'text';
@@ -1315,16 +1206,6 @@ GROUPS.forEach(function (g) {
   btnCol.appendChild(ansBtn);
   bar.appendChild(info);
   bar.appendChild(btnCol);
-
-  /* AI assistant icon */
-  var aiBtn = document.createElement('button');
-  aiBtn.className = 'ai-assist-btn';
-  aiBtn.id = 'ai-btn-' + g.id;
-  aiBtn.title = 'AI Assistant';
-  aiBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3h-1v4a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-4H7a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3h1V6a4 4 0 0 1 4-4z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg>';
-  aiBtn.addEventListener('click', function () { _openAiAssistant(g); });
-  bar.appendChild(aiBtn);
-
   videoWrap.appendChild(bar);
 
   /* questions */
@@ -1518,8 +1399,6 @@ function doSubmit(g) {
       if (isOk) { wrap.classList.add('ok'); q.bestCorrect = true; correct++; }
       else      { wrap.classList.add('no'); if (q.bestCorrect) correct++; }
       _feedbackCloze(q);
-      /* trigger AI evaluation for open-ended blanks */
-      if (q._hasOpenBlanks) _aiEvaluateOpenBlanks(q);
 
     } else if (q.type === 'combobox') {
       wrap.classList.remove('ok', 'no');
@@ -1531,13 +1410,7 @@ function doSubmit(g) {
       if (isOk) { wrap.classList.add('ok'); q.bestCorrect = true; correct++; }
       else      { wrap.classList.add('no'); if (q.bestCorrect) correct++; }
 
-    } else if (q.type === 'radio' || q.type === 'checkbox') {
-      wrap.classList.remove('ok', 'no');
-      if (isOk) { wrap.classList.add('ok'); q.bestCorrect = true; correct++; }
-      else      { wrap.classList.add('no'); if (q.bestCorrect) correct++; }
-      wrap.style.background = isOk ? 'rgba(39,174,96,0.15)' : 'rgba(231,76,60,0.12)';
-
-    } else if (q.type === 'ordering' || q.type === 'slider') {
+    } else if (q.type === 'radio' || q.type === 'checkbox' || q.type === 'ordering' || q.type === 'slider') {
       wrap.classList.remove('ok', 'no');
       if (isOk) { wrap.classList.add('ok'); q.bestCorrect = true; correct++; }
       else      { wrap.classList.add('no'); if (q.bestCorrect) correct++; }
@@ -1579,7 +1452,7 @@ function _lockGroup(g) {
     } else if (q.type === 'radio' || q.type === 'checkbox') {
       wrap.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
       wrap.setAttribute('data-locked', '1');
-      /* keep ok/no feedback visible until Answer is clicked */
+      wrap.classList.remove('ok', 'no');
     } else if (q.type === 'ordering') {
       wrap.setAttribute('data-locked', '1');
       wrap.querySelectorAll('.q-ordering-item').forEach(function (it) { it.removeAttribute('draggable'); });
@@ -1644,7 +1517,6 @@ function showAnswers(g) {
 
     } else if (q.type === 'radio') {
       var wrap = document.getElementById('w-' + q.id);
-      wrap.style.background = '';
       var correctR = wrap.querySelector('input[value="' + q.ans + '"]');
       if (correctR) correctR.checked = true;
       wrap.querySelectorAll('.q-mc-option').forEach(function (opt) {
@@ -1658,7 +1530,6 @@ function showAnswers(g) {
 
     } else if (q.type === 'checkbox') {
       var wrap = document.getElementById('w-' + q.id);
-      wrap.style.background = '';
       var ansSet = {}; q.ans.forEach(function (a) { ansSet[a] = true; });
       wrap.querySelectorAll('.q-mc-option').forEach(function (opt) {
         var idx = parseInt(opt.querySelector('input').value);
@@ -1706,19 +1577,16 @@ function showAnswers(g) {
 
     } else if (q.type === 'cloze') {
       var wrap = document.getElementById('w-' + q.id);
-      /* remove any AI feedback displays that replaced textareas */
-      wrap.querySelectorAll('.ai-feedback-display').forEach(function (fb) { fb.remove(); });
       q._blanks.forEach(function (bObj, bi) {
         var el = document.getElementById('cloze-' + q.id + '-' + bi);
         if (!el) return;
-        el.style.display = ''; /* restore if hidden by AI eval */
         if (el.tagName === 'SELECT') {
           el.value = bObj.ans;
         } else {
           el.value = bObj.ans;
           el.readOnly = true;
         }
-        el.classList.remove('no', 'ai-pending'); el.classList.add('ok');
+        el.classList.remove('no'); el.classList.add('ok');
         el.disabled = true;
       });
       wrap.classList.remove('no'); wrap.classList.add('ok');
@@ -1795,333 +1663,4 @@ function showSummary() {
     try { MOODLE.send(totalPct, perGroupData); }
     catch (err) { console.error('Moodle send failed:', err); }
   }
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   AI CONFIGURATION
-   Default: Pollinations.ai free text API (no key required).
-   Override with AI_CONFIG = { endpoint, model, apiKey, provider }.
-   provider: 'pollinations' (default) | 'anthropic' | 'openai'
-   ══════════════════════════════════════════════════════════════════ */
-var _aiCfg      = (typeof AI_CONFIG !== 'undefined') ? AI_CONFIG : {};
-var _aiProvider = _aiCfg.provider  || 'pollinations';
-var _aiEndpoint = _aiCfg.endpoint  || 'https://text.pollinations.ai/openai';
-var _aiModel    = _aiCfg.model     || 'openai';
-
-/**
- * Call the AI model. Returns a promise resolving to the text response.
- * Supports Pollinations (OpenAI-compatible) and Anthropic formats.
- */
-function _aiCall(systemPrompt, userMessage) {
-  return _aiCallMulti(systemPrompt, [{ role: 'user', content: userMessage }]);
-}
-
-function _aiCallMulti(systemPrompt, messages) {
-  var body, headers = { 'Content-Type': 'application/json' };
-
-  if (_aiProvider === 'anthropic') {
-    /* ── Anthropic format ── */
-    body = { model: _aiModel, max_tokens: 1024, system: systemPrompt, messages: messages };
-    if (_aiCfg.apiKey) {
-      headers['x-api-key'] = _aiCfg.apiKey;
-      headers['anthropic-version'] = '2023-06-01';
-    }
-  } else {
-    /* ── OpenAI-compatible format (Pollinations default) ── */
-    var allMsgs = [{ role: 'system', content: systemPrompt }].concat(messages);
-    body = { model: _aiModel, messages: allMsgs, temperature: 0.4, max_tokens: 1024 };
-    if (_aiCfg.apiKey) headers['Authorization'] = 'Bearer ' + _aiCfg.apiKey;
-  }
-
-  return fetch(_aiEndpoint, { method: 'POST', headers: headers, body: JSON.stringify(body) })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      /* Anthropic response */
-      if (data.content && Array.isArray(data.content)) {
-        return data.content.map(function (c) { return c.text || ''; }).join('');
-      }
-      /* OpenAI-compatible response */
-      if (data.choices && data.choices[0]) {
-        return (data.choices[0].message && data.choices[0].message.content) ||
-               data.choices[0].text || '';
-      }
-      /* plain text fallback (Pollinations simple endpoint) */
-      if (typeof data === 'string') return data;
-      if (data.error) throw new Error(data.error.message || 'AI API error');
-      return '';
-    });
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   AI EVALUATION FOR OPEN-ENDED CLOZE BLANKS
-   ══════════════════════════════════════════════════════════════════ */
-function _aiEvaluateOpenBlanks(q) {
-  var openBlanks = [];
-  q._blanks.forEach(function (bObj, bi) {
-    var el = document.getElementById('cloze-' + q.id + '-' + bi);
-    if (el && el.dataset.open === '1' && bObj.userAns) {
-      openBlanks.push({ idx: bi, userAns: bObj.userAns, correctAns: bObj.ans, el: el });
-    }
-  });
-  if (openBlanks.length === 0) return;
-
-  var systemPrompt =
-    'You are evaluating answers in an educational quiz. ' +
-    'Each blank is an open-ended edit box within a fill-in-the-blank (cloze) question. ' +
-    'For each blank, compare the student\'s answer to the correct answer. ' +
-    'Provide precise, fine-detail feedback: identify which specific parts, phrases, or sentences in the student\'s answer are correct and which are incorrect or missing. ' +
-    'Respond ONLY with a JSON array (no markdown fences). Each element must be: ' +
-    '{ "blankIdx": <number>, "segments": [ { "text": "<segment>", "correct": true|false } ], "score": <0-100>, "note": "<brief explanation>" }. ' +
-    'The segments array must cover the ENTIRE student answer text, split at meaningful boundaries (clauses, key terms). ' +
-    'Mark each segment as correct (true) if it aligns with the correct answer, or incorrect (false) if it is wrong or irrelevant.';
-
-  var userMsg = 'Evaluate these open-ended blanks:\n\n';
-  openBlanks.forEach(function (ob) {
-    userMsg += 'Blank #' + ob.idx + ':\n';
-    userMsg += '  Correct answer: ' + ob.correctAns + '\n';
-    userMsg += '  Student answer: ' + ob.userAns + '\n\n';
-  });
-
-  _aiCall(systemPrompt, userMsg).then(function (text) {
-    var results;
-    try {
-      var clean = text.replace(/```json|```/g, '').trim();
-      results = JSON.parse(clean);
-    } catch (e) { console.error('AI eval parse error:', e, text); return; }
-
-    results.forEach(function (r) {
-      var ob = openBlanks.filter(function (o) { return o.idx === r.blankIdx; })[0];
-      if (!ob) return;
-
-      /* replace textarea content with color-coded feedback */
-      var feedbackEl = document.createElement('div');
-      feedbackEl.className = 'ai-feedback-display';
-      feedbackEl.style.width  = ob.el.style.width;
-      feedbackEl.style.minHeight = ob.el.style.height;
-      if (ob.el.style.fontSize) feedbackEl.style.fontSize = ob.el.style.fontSize;
-
-      (r.segments || []).forEach(function (seg) {
-        var sp = document.createElement('span');
-        sp.className = seg.correct ? 'ai-seg-ok' : 'ai-seg-no';
-        sp.textContent = seg.text;
-        feedbackEl.appendChild(sp);
-      });
-
-      if (r.note) {
-        var noteEl = document.createElement('div');
-        noteEl.className = 'ai-feedback-note';
-        noteEl.textContent = r.note;
-        feedbackEl.appendChild(noteEl);
-      }
-
-      ob.el.classList.remove('ai-pending');
-      ob.el.style.display = 'none';
-      ob.el.parentNode.insertBefore(feedbackEl, ob.el.nextSibling);
-    });
-  }).catch(function (err) {
-    console.error('AI evaluation failed:', err);
-    openBlanks.forEach(function (ob) {
-      ob.el.classList.remove('ai-pending');
-      ob.el.classList.add('no');
-    });
-  });
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   AI ASSISTANT PANEL — per question group
-   ══════════════════════════════════════════════════════════════════ */
-var _aiPanelEl = null;
-var _aiPanelGroup = null;
-var _aiChatHistory = {};  /* keyed by group id */
-
-function _buildQuizContext(g) {
-  var ctx = 'This is an educational quiz. The current question group is "' +
-    (g.label || 'Group') + '" and contains these questions:\n\n';
-  g.questions.forEach(function (q, qi) {
-    if (q.type === 'label' || q.type === 'image' || q.type === 'bubble') return;
-    ctx += 'Q' + (qi + 1) + ': ';
-    if (q.type === 'cloze') {
-      var txt = '';
-      if (q.template) txt = q.template;
-      else if (q.parts) q.parts.forEach(function (p) {
-        txt += (typeof p === 'string') ? p : ' [____] ';
-      });
-      ctx += '(cloze) ' + txt + '\n';
-    } else if (q.type === 'radio' || q.type === 'checkbox') {
-      ctx += '(' + q.type + ') ' + (q.question || '') + ' — choices: ' + (q.choices || []).join(', ') + '\n';
-    } else if (q.type === 'match') {
-      ctx += '(match) left: ' + q.left.join(', ') + ' | right: ' + q.right.join(', ') + '\n';
-    } else if (q.type === 'ordering') {
-      ctx += '(ordering) ' + (q.question || '') + ' — items: ' + q.items.join(', ') + '\n';
-    } else if (q.type === 'slider') {
-      ctx += '(slider) ' + (q.question || '') + ' [' + q.min + '–' + q.max + ']\n';
-    } else if (q.type === 'combobox') {
-      ctx += '(combobox) options: ' + (q.options || []).join(', ') + '\n';
-    } else {
-      ctx += '(text input) answer expected\n';
-    }
-  });
-  return ctx;
-}
-
-function _openAiAssistant(g) {
-  if (_aiPanelEl && _aiPanelGroup === g.id) {
-    /* toggle off */
-    _aiPanelEl.classList.remove('show');
-    _aiPanelGroup = null;
-    return;
-  }
-
-  if (!_aiPanelEl) {
-    _aiPanelEl = document.createElement('div');
-    _aiPanelEl.id = 'ai-assist-panel';
-    _aiPanelEl.innerHTML =
-      '<div class="ai-panel-header">' +
-        '<span class="ai-panel-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3h-1v4a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-4H7a3 3 0 0 1-3-3v-1a3 3 0 0 1 3-3h1V6a4 4 0 0 1 4-4z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg> AI Assistant</span>' +
-        '<button class="ai-panel-close" id="ai-panel-close">&times;</button>' +
-      '</div>' +
-      '<div class="ai-mode-bar">' +
-        '<button class="ai-mode-btn" data-mode="guide">Guide</button>' +
-        '<button class="ai-mode-btn" data-mode="hint">Hint</button>' +
-        '<button class="ai-mode-btn" data-mode="chat">Chat</button>' +
-      '</div>' +
-      '<div class="ai-chat-messages" id="ai-chat-messages"></div>' +
-      '<div class="ai-chat-input-row">' +
-        '<input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="Ask about the questions\u2026" />' +
-        '<button class="ai-chat-send" id="ai-chat-send">&#10148;</button>' +
-      '</div>';
-    videoWrap.appendChild(_aiPanelEl);
-
-    document.getElementById('ai-panel-close').addEventListener('click', function () {
-      _aiPanelEl.classList.remove('show');
-      _aiPanelGroup = null;
-    });
-
-    _aiPanelEl.querySelectorAll('.ai-mode-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var mode = this.dataset.mode;
-        _aiPanelEl.querySelectorAll('.ai-mode-btn').forEach(function (b) { b.classList.remove('active'); });
-        this.classList.add('active');
-        _sendAiModeMessage(mode);
-      });
-    });
-
-    document.getElementById('ai-chat-send').addEventListener('click', _sendAiChatMessage);
-    document.getElementById('ai-chat-input').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); _sendAiChatMessage(); }
-    });
-  }
-
-  _aiPanelGroup = g.id;
-  _aiPanelEl.classList.add('show');
-
-  /* restore or reset chat */
-  var msgBox = document.getElementById('ai-chat-messages');
-  if (!_aiChatHistory[g.id]) _aiChatHistory[g.id] = [];
-  _renderAiChat(g.id);
-
-  /* activate 'chat' mode by default */
-  _aiPanelEl.querySelectorAll('.ai-mode-btn').forEach(function (b) {
-    b.classList.toggle('active', b.dataset.mode === 'chat');
-  });
-}
-
-function _getActiveAiMode() {
-  var active = _aiPanelEl.querySelector('.ai-mode-btn.active');
-  return active ? active.dataset.mode : 'chat';
-}
-
-function _sendAiModeMessage(mode) {
-  var g = groupById(_aiPanelGroup);
-  if (!g) return;
-
-  var presetMsg;
-  if (mode === 'guide') presetMsg = 'Please guide me step-by-step toward solving these questions. Don\'t give away the answers directly.';
-  else if (mode === 'hint') presetMsg = 'Give me a short hint for the questions in this group. Don\'t reveal the full answers.';
-  else return;
-
-  _aiChatHistory[g.id].push({ role: 'user', text: presetMsg });
-  _renderAiChat(g.id);
-  _doAiChat(g);
-}
-
-function _sendAiChatMessage() {
-  var inp = document.getElementById('ai-chat-input');
-  var text = inp.value.trim();
-  if (!text || !_aiPanelGroup) return;
-  inp.value = '';
-
-  var g = groupById(_aiPanelGroup);
-  if (!g) return;
-
-  _aiChatHistory[g.id].push({ role: 'user', text: text });
-  _renderAiChat(g.id);
-  _doAiChat(g);
-}
-
-function _doAiChat(g) {
-  var history = _aiChatHistory[g.id];
-  var mode = _getActiveAiMode();
-
-  var systemPrompt =
-    'You are a helpful AI assistant embedded in an educational quiz application. ' +
-    'The quiz contains multiple question groups, each with several questions of various types. ' +
-    'You are currently assisting with one specific group of questions. ' +
-    'You should address any question the user refers to within this group.\n\n';
-
-  if (mode === 'guide') {
-    systemPrompt += 'MODE: GUIDE — Lead the student step-by-step toward the answer. ' +
-      'Ask Socratic questions. Do NOT give away answers directly. ' +
-      'Help them reason through the problem.\n\n';
-  } else if (mode === 'hint') {
-    systemPrompt += 'MODE: HINT — Provide a brief, helpful clue. ' +
-      'Do NOT reveal the full answer. Keep hints concise (1-2 sentences).\n\n';
-  } else {
-    systemPrompt += 'MODE: CHAT — Have a natural dialogue about the questions. ' +
-      'Answer the student\'s questions helpfully. ' +
-      'You may explain concepts, clarify questions, or discuss related topics.\n\n';
-  }
-
-  systemPrompt += _buildQuizContext(g);
-
-  /* Build messages for the API */
-  var msgs = history.map(function (m) {
-    return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text };
-  });
-
-  /* add a thinking indicator */
-  history.push({ role: 'assistant', text: '…', pending: true });
-  _renderAiChat(g.id);
-
-  _aiCallMulti(systemPrompt, msgs)
-    .then(function (reply) {
-      /* remove pending */
-      for (var i = history.length - 1; i >= 0; i--) {
-        if (history[i].pending) { history.splice(i, 1); break; }
-      }
-      history.push({ role: 'assistant', text: reply || '(No response)' });
-      _renderAiChat(g.id);
-    })
-    .catch(function (err) {
-      for (var i = history.length - 1; i >= 0; i--) {
-        if (history[i].pending) { history.splice(i, 1); break; }
-      }
-      history.push({ role: 'assistant', text: 'Sorry, I could not connect to the AI service.' });
-      _renderAiChat(g.id);
-    });
-}
-
-function _renderAiChat(gid) {
-  var box = document.getElementById('ai-chat-messages');
-  if (!box) return;
-  var history = _aiChatHistory[gid] || [];
-  box.innerHTML = '';
-  history.forEach(function (m) {
-    var div = document.createElement('div');
-    div.className = 'ai-chat-msg ai-chat-' + m.role;
-    if (m.pending) div.classList.add('ai-pending-msg');
-    div.textContent = m.text;
-    box.appendChild(div);
-  });
-  box.scrollTop = box.scrollHeight;
 }

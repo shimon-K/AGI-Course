@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — Classification methods Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  //duration: 125,
+  autoPlay: false
+};
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 12;
+var POST_QUIZ_DURATION = 15; // Number of seconds after the last question to trigger the summary
+
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+var GROUPS = [
+  {
+    maxTries: 2,
+    label: 'Generative vs Discriminative',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which statement correctly distinguishes generative from discriminative classifiers?',
+        choices: [
+          'Generative models learn P(y|x) directly; Discriminative models learn P(x,y)',
+          'Generative models learn the joint distribution P(x,y); Discriminative models learn P(y|x) directly',
+          'Both model types learn P(x,y) but use different optimization',
+          'Generative models require more data; Discriminative models require less'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ Generative classifiers (e.g., Naive Bayes) model the joint P(x,y) or equivalently P(x|y)·P(y), learning how the data is generated. Discriminative classifiers (e.g., Logistic Regression) directly learn the decision boundary P(y|x) without modeling how x is distributed.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 43, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Match classifier types',
+    questions: [
+      {
+        type: 'match', x: 4, y: 8, w: 360, fs: 13,
+        dotSize: 16, dotGap: 14, colGap: 120,
+        left:  ['Naive Bayes', 'Logistic Regression', 'Decision Tree'],
+        right: ['Splits features by information gain', 'Assumes feature independence given class', 'Optimizes log-likelihood iteratively'],
+        ans:   [1,2,0]
+      }
+    ],
+    bubble: {
+      text: '✓ Naive Bayes assumes feature independence given the class label (its "naive" assumption). Logistic Regression optimizes the log-likelihood iteratively using gradient descent. Decision Trees split features recursively using criteria like information gain to increase class purity.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 48, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Bayes theorem',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'Bayes\' theorem states: P(y|x) = P(x|y) · P(y) / P(x). ',
+          'P(y) is called the ',
+          { blank: true, ans: 'prior', w: 90, type: 'select', options: ['prior', 'likelihood', 'posterior', 'probability', 'conditional' ] },
+          ', P(x|y) is the ',
+          { blank: true, ans: 'likelihood', w: 90, type: 'select', options: ['prior', 'likelihood', 'posterior', 'probability', 'conditional' ] },
+          ', and P(y|x) is the ',
+          { blank: true, ans: 'posterior', w: 90, type: 'select', options: ['prior', 'likelihood', 'posterior', 'probability', 'conditional' ] },
+          '.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ In Bayes\' theorem: P(y) = PRIOR (belief before seeing data), P(x|y) = LIKELIHOOD (how likely the data is given the class), P(y|x) = POSTERIOR (updated belief after seeing data). P(x) is the evidence or marginal likelihood, acting as a normalizing constant.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 35, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Entropy',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 40,
+        question: 'In a decision tree, what does entropy measure?',
+        choices: [
+          'The depth of the tree',
+          'The number of features used',
+          'The impurity or uncertainty in a node',
+          'The accuracy of predictions'
+        ],
+        ans: 2
+      },
+      {
+        type: 'cloze', x: 4, y: 44, w: 40,
+        parts: [
+          'If a decision tree node contains only examples of class "Yes", its entropy is 0:  ',
+          { blank: true, ans: 'True', w: 77, type: 'select', options: ['True', 'False'] }
+        ]
+      },
+      {
+        type: 'slider', x: 4, y: 70, w: 40,
+        question: 'A node has 6 "Yes" and 4 "No" examples. What is the entropy H? Slide to the nearest tenth.',
+        min: 0, max: 1, step: 0.01,
+        ans: 0.97, tol: 0.03, unit: ' bits'
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Entropy H measures the impurity or uncertainty in a node. H = −Σ p(c)·log₂(p(c)) for each class c. When a node is pure (all one class), H = 0 (no uncertainty). When classes are equally mixed, H is maximal. Decision trees aim to reduce entropy with each split.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+        x: 48, y: 13, w: 42
+      },
+      {
+        text: '✓ True! When a node is completely pure (all examples belong to one class), there is no uncertainty, so entropy = 0. H = −1·log₂(1) = 0. This is the ideal goal for leaf nodes — perfect purity.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+        x: 48, y: 40, w: 42
+      },
+      {
+        text: '✓ H = −0.6·log₂(0.6) − 0.4·log₂(0.4) = −0.6·(−0.737) − 0.4·(−1.322) = 0.442 + 0.529 = 0.971 bits. This matches the "Buys Computer" example (slide 90) with Yes=6, No=4. Maximum entropy for binary is 1.0 (at p=0.5).',
+      style: 'bubble', tailSize: 20, tail: 'left',
+        x: 48, y: 68, w: 48
+      }
+    ]
+  },
+  {
+    maxTries: 2,
+    label: 'Naive Bayes',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 42,
+        question: 'What is the "naive" assumption in Naive Bayes?',
+        choices: [
+          'The prior P(y) is always uniform',
+          'Features are conditionally independent given the class label',
+          'The likelihood P(x|y) follows a Gaussian distribution',
+          'Each feature contributes equally to the prediction'
+        ],
+        ans: 1
+      },
+      {
+        type: 'radio', x: 4, y: 48, w: 42,
+        question: 'Given: P(Weather=Sunny|Play=Yes)=0, P(Weather=Sunny|Play=No)=1, P(Play=Yes)=0.5, P(Play=No)=0.5. Using Naive Bayes, if Weather=Sunny, what is the prediction?',
+        choices: [
+          'Play = Yes',
+          'Play = No',
+          'Cannot determine',
+          'Equal probability for both'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [ {
+      text: '✓ The "naive" assumption is that features are conditionally INDEPENDENT given the class: P(x₁,x₂,...,xₖ|y) = P(x₁|y)·P(x₂|y)·...·P(xₖ|y). This simplification makes computation tractable but rarely holds perfectly in practice. Despite this, Naive Bayes often works surprisingly well.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 48, y: 10, w: 42
+    },
+    {
+      text: '✓ P(Yes|Sunny) ∝ P(Sunny|Yes)·P(Yes) = 0 × 0.5 = 0. P(No|Sunny) ∝ P(Sunny|No)·P(No) = 1 × 0.5 = 0.5. Since 0 < 0.5, prediction is Play = No. This follows the Naive Bayes example from slide 68.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 48, y: 55, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 2,
+    label: 'Decision trees',
+    questions: [
+      {
+        type: 'ordering', x: 4, y: 8, w: 50,
+        question: 'Order the steps for building a decision tree:',
+        items: [
+          'Recursively split child nodes',
+          'Choose the feature with highest Information Gain as root',
+          'Compute entropy of the whole dataset',
+          'Stop when nodes are pure or max depth reached'
+        ],
+        ans: [1, 2, 3]
+      },
+      {
+        type: 'checkbox', x: 4, y: 52, w: 50,
+        question: 'Select ALL true statements about decision trees:',
+        choices: [
+          'They can be used for both classification and regression',
+          'They always produce globally optimal splits',
+          'They split features using a greedy algorithm',
+          'Information Gain = H(parent) − weighted average H(children)',
+          'They require feature scaling / normalization'
+        ],
+        ans: [2, 3]
+      }
+    ],
+    bubbles: [ {
+      text: '✓ Steps: (1) Compute the entropy of the entire dataset. (2) Evaluate Information Gain for each feature and choose the one with the highest IG as the root split. (3) Recursively split child nodes using the same process. (4) Stop when nodes are pure (entropy=0) or a stopping criterion is met.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 56, y: 15, w: 42
+    },
+    {
+      text: '✓ True: Decision trees work for BOTH classification and regression (slide 96). They use a GREEDY algorithm (not globally optimal). IG = H(parent) − Σ(|child|/|parent|)·H(child). They do NOT require feature scaling since splits are based on thresholds, not distances.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 56, y: 60, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 3,
+    label: 'Entropy and Information Gain',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 42,
+        question: 'For a binary classification problem, what is the maximum possible entropy?',
+        choices: [
+          '0 bits',
+          '0.5 bits',
+          '1.0 bits',
+          '2.0 bits'
+        ],
+        ans: 2
+      },
+      {
+        type: 'cloze', x: 4, y: 50, w: 42,
+        parts: [
+          'From the "Buys Computer" dataset (slide 91): H(total) = 0.971 bits. Split by Age: H(≤30) = 0.811, H(31-40) = 0, H(>40) = 0.811. Weighted avg entropy = (4/10)·0.811 + (2/10)·0 + (4/10)·0.811 = ',
+          { blank: true, ans: '0.649', w: 60 },
+          '. Information Gain for Age = 0.971 − 0.649 = ',
+          { blank: true, ans: '0.322', w: 60 },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [ {
+      text: '✓ Maximum entropy for binary classification is 1.0 bit, achieved when P(class₁) = P(class₂) = 0.5. H = −0.5·log₂(0.5) − 0.5·log₂(0.5) = −0.5·(−1) − 0.5·(−1) = 1.0 bit. This represents maximum uncertainty — a coin flip.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 12, w: 42
+    },
+    {
+      text: '✓ Weighted avg H = (4/10)·0.811 + (2/10)·0 + (4/10)·0.811 = 0.3244 + 0 + 0.3244 = 0.6488 ≈ 0.649. IG(Age) = 0.971 − 0.649 = 0.322. This was the highest IG among all features, so Age was chosen as the root split (slide 91-93).',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 52, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 2,
+    label: 'Buys computer prediction',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Using the decision tree from slide 89: A person aged 25 (≤30) who IS a student with fair credit. Does the tree predict they buy a computer?',
+        choices: [
+          'No — age ≤30 always leads to No',
+          'Yes — because age ≤30 and Student=Yes leads to Yes',
+          'No — because credit is fair',
+          'Cannot be determined from the tree'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ Following the tree (slide 89): Age ≤ 30 → check Student → Student = Yes → prediction: YES (buys computer). The tree\'s rule is: (Age ≤ 30 and Student = Yes) → Yes. Age ≤ 30 does NOT always lead to No — it depends on the Student sub-split.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 50, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'NB spam classification',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Given 8 real and 4 spam emails. Real emails contain {Dear:8, Friend:5, Money:1}. Spam contains {Dear:2, Friend:1, Money:4}. Using Naive Bayes, is "Dear Friend" classified as Real or Spam?',
+        choices: [
+          'Spam — because spam contains the word "Dear"',
+          'Real — because P(Real) × P(Dear|Real) × P(Friend|Real) > P(Spam) × P(Dear|Spam) × P(Friend|Spam)',
+          'Spam — because P(Spam|Dear,Friend) > P(Real|Dear,Friend)',
+          'Cannot determine without P(x)'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ P(Real)=8/12=2/3, P(Spam)=4/12=1/3. P(Dear|R)=8/17≈0.47, P(Friend|R)=5/17≈0.29. P(Dear|S)=2/7≈0.29, P(Friend|S)=1/7≈0.14. Score(R)=(2/3)·0.47·0.29≈0.091. Score(S)=(1/3)·0.29·0.14≈0.014. Real >> Spam. Prediction: Real (slide 72).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 45, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Classification summary',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which classifier is categorized as a generative model?',
+        choices: [
+          'Logistic Regression',
+          'SVM',
+          'Naive Bayes',
+          'Perceptron'
+        ],
+        ans: 2
+      }
+    ],
+    bubble: {
+      text: '✓ Naive Bayes is a generative model — it models P(x|y)·P(y) (i.e., how data is generated per class) and uses Bayes\' rule to compute P(y|x). Logistic Regression, SVM, and Perceptron are all discriminative models that directly learn the decision boundary P(y|x) without modeling P(x|y).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 45, w: 92
+    }
+  },
+  {
+      maxTries: 2,
+      label: 'Classification True/False Questions',
+      questions: [
+      {
+        type: 'cloze', x: 4, y: 5, w: 94,
+        parts: [
+          '1) Logistic regression is not used for classification:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n2) Logistic regression is an example of a discriminative approach, whereas Naive Bayes is a generative method:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n3) A decision tree model contains parameters for learning:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n4) In decision tree, as one progresses from the root of the tree (its top part) towards its branches (its bottom part), the purity of the classes increases:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n5) In decision tree, at each node, when splitting it by a feature, we evaluate several split candidates and choose the one that produces the highest purity:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] }
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ 1) False. Its output is the probability of belonging to a certain class, therefore it is indeed used for classification. 2) True. In logistic regression, we directly compute y as a function of x, whereas in Naive Bayes, we learn the distribution of the data itself in order to compute y given x. 3) False. A decision tree is a non-parametric model, meaning it has no parameters to learn; rather, it learns a tree structure for classification. 4) True. This is the primary objective when building a decision tree: to increase class purity with each new split. 5) True. This is exactly the method used (e.g., maximizing information gain or decreasing impurity).',
+      style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 64, w: 96
+    }
+  }
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+
+</body>
+</html>

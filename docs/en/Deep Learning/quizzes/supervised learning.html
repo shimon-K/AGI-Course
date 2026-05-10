@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — Supervised Learning Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  //duration: 150,
+  autoPlay: false
+};
+
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 12;
+var POST_QUIZ_DURATION = 15; // Number of seconds after the last question to trigger the summary
+
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+var GROUPS = [
+  {
+    maxTries: 2,
+    label: 'k-NN (k-Nearest Neighbors)',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 8, w: 48,
+        question: 'In k-NN classification, what does "k" represent?',
+        choices: [
+          'The number of features',
+          'The number of classes',
+          'The number of nearest neighbors used for voting',
+          'The number of training iterations'
+        ],
+        ans: 2
+      },
+      {
+        type: 'cloze', x: 4, y: 38, w: 40,
+        parts: [
+          'k-NN requires an explicit training phase where model parameters are learned:  ',
+          { blank: true, ans: 'False', w: 77,
+            type: 'select',
+            options: ['True', 'False'] }
+        ]
+      },
+      {
+        type: 'radio', x: 4, y: 58, w: 48,
+        question: 'What happens when k is too large in k-NN?',
+        choices: [
+          'The model overfits to training data',
+          'The model becomes more sensitive to noise',
+          'The model underfits — it consults too many distant points',
+          'The model becomes faster at prediction'
+        ],
+        ans: 2
+      }
+    ],
+    bubbles: [ {
+      text: '✓ In k-NN, "k" is the number of nearest neighbors that vote on the class of a new data point. For k=1, the class is simply the label of the single nearest neighbor. For k=3, the three closest points vote by majority. k is a hyperparameter that affects model complexity.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 8, w: 42
+    },
+    {
+      text: '✓ False! k-NN is a "lazy learner" — it has NO explicit training phase. It simply stores the training data and performs all computation at prediction time by calculating distances to all training points. This makes training instant but prediction slow for large datasets.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 34, w: 42
+    },
+    {
+      text: '✓ Too large k causes underfitting: the model consults too many neighbors including distant, irrelevant points. Too small k (especially k=1) causes overfitting — it\'s sensitive to noise. The sweet spot is in between. As the lecture notes: low k = good for training, higher k = good for unseen data, too high k = bad.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 59, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 3,
+    label: 'k-NN distance calculation',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 10, w: 92,
+        parts: [
+          'Classify point (3,2) with k=3. Training points: A(1,1)=Red, B(2,1)=Red, C(4,3)=Blue, D(5,4)=Blue. ',
+          'Euclidean distance to A = √((3−1)²+(2−1)²) = √5 ≈ ',
+          { blank: true, ans: '2.24', w: 55 },
+          '. Distance to B = √((3−2)²+(2−1)²) = √2 ≈ ',
+          { blank: true, ans: '1.41', w: 55 },
+          '. The 3 nearest are B, A, C. Red has ',
+          { blank: true, ans: '2', w: 35 },
+          ' votes. Prediction: ',
+          { blank: true, ans: 'Red', w: 50 },
+          '.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ Distances: d(A)=√5≈2.24, d(B)=√2≈1.41, d(C)=√2≈1.41, d(D)=√8≈2.83. Three nearest: B(1.41), C(1.41), A(2.24). Votes: Red=2 (A,B), Blue=1 (C). Majority → Red. This follows the lecture example (slides 103-105).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 32, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'NN types and tasks',
+    questions: [
+      {
+        type: 'match', x: 4, y: 8, w: 360, fs: 13,
+        dotSize: 16, dotGap: 14, colGap: 120,
+        left:  ['CNN', 'RNN', 'MLP (Feedforward)'],
+        right: ['Tabular / general data', 'Sequential / time-series data', 'Image / spatial data'],
+        ans:   [2, 1, 0]
+      }
+    ],
+    bubble: {
+      text: '✓ CNN (Convolutional Neural Network) → Image/spatial data — uses kernels to detect spatial patterns. RNN (Recurrent Neural Network) → Sequential/time-series data — has memory of previous inputs. MLP (Multi-Layer Perceptron) → Tabular/general data — fully connected feedforward network.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 38, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Activation for classification',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which activation function is used at the output layer for multi-class classification to produce a probability distribution?',
+        choices: [
+          'ReLU',
+          'Sigmoid',
+          'Softmax',
+          'Tanh'
+        ],
+        ans: 2
+      }
+    ],
+    bubble: {
+      text: '✓ Softmax converts a vector of raw scores into a probability distribution where all outputs sum to 1. It\'s used for multi-class classification (slide 122). Sigmoid outputs a single probability (0-1) for binary classification. ReLU and Tanh are used in hidden layers, not for classification output.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 35, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'NN training steps',
+    questions: [
+       {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order the steps in training a neural network:',
+        items: [
+          'Backward pass: compute gradients',
+          'Forward pass: compute predictions',
+          'Update weights using gradients',
+          'Compute loss from predictions vs true labels'
+        ],
+        ans: [1, 2, 3]
+      }
+    ],
+    bubble: {
+      text: '✓ Neural network training loop: (1) Forward pass — input flows through layers to produce predictions. (2) Compute loss — compare predictions to true labels using a loss function. (3) Backward pass — compute gradients via backpropagation. (4) Update weights — w ← w − η·∇L (gradient descent). Repeat for many epochs.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 50, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Overfitting vs Underfitting',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'A model has high accuracy on training data but low accuracy on test data. This is a sign of:',
+        choices: [
+          'Underfitting (high bias)',
+          'Overfitting (high variance)',
+          'Good generalization',
+          'Insufficient training data only'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ High training accuracy + low test accuracy = Overfitting (high variance). The model has memorized training data including noise, failing to generalize. Underfitting (high bias) would show low accuracy on BOTH sets. Solutions include: regularization, more data, cross-validation, or simpler models (slide 119-120).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 38, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Convolutional Neural Network (CNN)',
+    questions: [
+       {
+        type: 'checkbox', x: 4, y: 8, w: 42,
+        question: 'Select ALL operations commonly found in a Convolutional Neural Network (CNN):',
+        choices: [
+          'Convolution with learned kernels/filters',
+          'Pooling (e.g., max pooling)',
+          'Recurrent connections between layers',
+          'Fully connected layers at the end',
+          'Shared weights across spatial positions'
+        ],
+        ans: [1, 3, 4]
+      },
+       {
+        type: 'radio', x: 4, y: 52, w: 42,
+        question: 'What is the main purpose of pooling layers in a CNN?',
+        choices: [
+          'To increase the spatial resolution of feature maps',
+          'To reduce spatial dimensions and provide translation invariance',
+          'To learn new features from the input',
+          'To normalize the activations'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [ {
+      text: '✓ CNN components: Convolution (learned kernels scanning the input), Pooling (reducing spatial dimensions, e.g., max pooling), Fully connected layers (at the end for classification), and Shared weights (kernels are applied across all positions). Recurrent connections belong to RNNs, not CNNs (slides 128-131).',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 14, w: 42
+    },
+    {
+      text: '✓ Pooling (e.g., max pooling, average pooling) reduces the spatial dimensions of feature maps (slide 130). This provides: (1) computational efficiency, (2) reduced overfitting, and (3) some translation invariance — the network becomes less sensitive to exact positions of features.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 54, y: 53, w: 42
+    }
+   ]
+  },
+  {
+    maxTries: 2,
+    label: 'Backpropagation',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is the purpose of backpropagation in neural networks?',
+        choices: [
+          'To propagate the input data forward through the network',
+          'To compute the gradients of the loss with respect to each weight',
+          'To initialize the weights randomly',
+          'To select the optimal number of layers'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ Backpropagation computes the gradient of the loss function with respect to each weight by applying the chain rule layer by layer, from output back to input (slide 115). These gradients tell us how much each weight contributed to the error, enabling gradient descent weight updates.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Bias-variance tradeoff',
+    questions: [
+       {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'A simple linear model typically has high ',
+          { blank: true, ans: 'bias', w: 60 },
+          ' and low ',
+          { blank: true, ans: 'variance', w: 70 },
+          '. A very complex model (e.g., deep NN) typically has low ',
+          { blank: true, ans: 'bias', w: 60 },
+          ' and high ',
+          { blank: true, ans: 'variance', w: 70 },
+          '.\\n\\nAllowable words: error, bias, gradient, variance.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ The bias-variance tradeoff (slide 119): Simple models → high BIAS (underfitting, can\'t capture patterns) + low VARIANCE (consistent across datasets). Complex models → low BIAS (flexible enough to fit patterns) + high VARIANCE (overfitting, sensitive to specific training data). The goal is to find the sweet spot.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 50, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Cross-validation purpose',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Why is k-fold cross-validation preferred over a single train/test split?',
+        choices: [
+          'It trains the model k times faster',
+          'It reduces variance in the performance estimate by averaging across k splits',
+          'It eliminates the need for a test set entirely',
+          'It guarantees no overfitting'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ k-fold cross-validation (slide 120) splits data into k folds, trains on k−1 and tests on 1, rotating k times. The performance is averaged across all k splits, giving a more reliable and less variable estimate than a single split, which can be lucky/unlucky. It does NOT eliminate overfitting — it better detects it.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Loss functions',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'For multi-class classification with mutually exclusive classes, which loss function is standard?',
+        choices: [
+          'Mean Squared Error (MSE)',
+          'Binary Cross-Entropy',
+          'Negative Log-Likelihood (NLL) / Categorical Cross-Entropy',
+          'Hinge Loss'
+        ],
+        ans: 2
+      }
+    ],
+    bubble: {
+      text: '✓ For multi-class with mutually exclusive classes: use Softmax activation + NLL (Negative Log-Likelihood), also called Categorical Cross-Entropy (slide 122). Binary CE is for binary or multi-label tasks. MSE is for regression. Hinge loss is used in SVMs.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'RNN strength',
+    questions: [
+       {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What gives Recurrent Neural Networks (RNNs) their ability to handle sequential data?',
+        choices: [
+          'Convolutional filters that slide across the sequence',
+          'A hidden state that carries information from previous time steps',
+          'Attention mechanisms that weigh all positions equally',
+          'Pooling layers that summarize the sequence'
+        ],
+        ans: 1
+      }
+    ],
+    bubble: {
+      text: '✓ RNNs maintain a hidden state sₖ that is updated at each time step: sₖ₊₁ = f(sₖ, xₖ) (slide 123). This hidden state acts as "memory", carrying information from previous inputs to influence the processing of later ones. Variants like LSTM and GRU (slide 125) address the vanishing gradient problem in basic RNNs.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 40, w: 92
+    }
+  },
+  {
+    maxTries: 2,
+    label: 'Supervised Learning True/False questions',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 5, w: 94,
+        parts: [
+          '1) An advantage of the k-Nearest Neighbors method is that there is no training phase, while a disadvantage is its computational dependency on the size of the data during inference:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] }/*,
+          '.\\n3) In the Gaussian Mixture Model (GMM) method, each data point belongs to a single, distinct cluster:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n4) Both GMM and k-Means involve two steps in each iteration: first, fixing the parameters to determine the assignment of points to clusters, and second, fixing the assignments to update the parameters:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] }*/
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ 1) True. There is no training phase (lazy learning), allowing immediate prediction on new inputs. However, finding the nearest neighbors requires computing the distance from the new input to all points in the dataset.',
+      style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 64, w: 96
+    }
+  }
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+
+</body>
+</html>
