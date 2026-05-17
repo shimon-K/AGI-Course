@@ -44,7 +44,7 @@ function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k i
 
 var GROUPS = [
   {
-    maxTries: 2,
+    maxTries: 3,
     label: 'ML types matching',
     questions: [
       {
@@ -62,7 +62,7 @@ var GROUPS = [
     }
   },
   {
-    maxTries: 2,
+    maxTries: 3,
     label: 'ML types True/False questions',
     questions: [
       {
@@ -85,7 +85,27 @@ var GROUPS = [
       x: 4, y: 55, w: 92
     }
   },
-  
+ {
+  label: 'ML Intro - open-ended questions',
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:5, y:10, w:47, fs:20, lineSpacing:1.4,
+      parts: [
+        'What are the three types of machine learning?\n',
+        { blank:true, ans:'Supervised learning, unsupervised learning, and reinforcement learning.', type:'open', w:670, h:100 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:5, y:44, w:47, fs:20, lineSpacing:1.4,
+      parts: [
+        'What is the main difference between supervised learning and unsupervised learning?\n',
+        { blank:true, ans:'In supervised learning there are both inputs and outputs, while in unsupervised learning there are only inputs.', type:'open', w:670, h:100 }
+      ]
+    },
+  ],
+},
+
 ];
 </script>
 

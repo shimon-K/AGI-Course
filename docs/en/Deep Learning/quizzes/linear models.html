@@ -332,6 +332,33 @@ var GROUPS = [
       x: 2, y: 56, w: 96
     }
   },
+    {
+  label: 'Linear Models - open-ended questions',
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:5, y:10, w:470, fs:18, lineSpacing:1.35,
+      parts: [
+        'What do linear correlation and covariance have in common?\n',
+        { blank:true, ans:'Both are measures of the linear relationship between variables.', type:'open', w:670, h:80 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:5, y:36, w:470, fs:18, lineSpacing:1.35,
+      parts: [
+        'What is the difference between linear correlation and covariance?\n',
+        { blank:true, ans:'Linear correlation is a normalized covariance, scaled to the range [-1, 1].', type:'open', w:670, h:80 }
+      ]
+    },
+    /* ── Q3: open-ended ── */
+    { type:'cloze', x:5, y:62, w:470, fs:18, lineSpacing:1.35,
+      parts: [
+        'What is the difference between linear regression and linear correlation?\n',
+        { blank:true, ans:'Linear regression describes the linear relationship itself, while linear correlation describes the strength of that linear relationship.', type:'open', w:670, h:80 }
+      ]
+    },
+  ],
+},
 
 ];
 </script>

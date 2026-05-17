@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Engine v3 — All Features Demo</title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">Quiz Engine v3 &mdash; Feature Demo</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">youtube-quiz-engine v3</div>
+
+<script>
+/* ─────────────────────────────────────────────────────
+   CONFIG
+   ───────────────────────────────────────────────────── */
+
+/* Blank-background mode (no YouTube video needed) */
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#1a1a2e',
+  duration: 120,
+  autoPlay: false
+};
+
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 15;
+
+/* ─────────────────────────────────────────────────────
+   GROUPS
+   time is optional — auto-generated if omitted:
+     g0 → 5s, g1 → 20s, g2 → 35s, g3 → 50s, g4 → 65s, …
+   ───────────────────────────────────────────────────── */
+var GROUPS = [
+
+  /* ── Group 1 (time auto = 5) ─────────────────────────
+     Features: LaTeX label, cloze with per-item feedback,
+     newlines, dropdown blank inside cloze              */
+  {
+    label: 'Algebra Basics',
+    maxTries: 3,
+    questions: [
+      {
+        type: 'label', x: 2, y: 4,
+        text: 'Solve the following ($x$ is unknown):',
+        fs: 13, color: '#e2e8f0', opacity: 0
+      },
+      {
+        type: 'cloze', x: 2, y: 16, w: 55, fs: 14,
+        lineSpacing: '2.8',
+        color: '#e2e8f0',
+        parts: [
+          'If $2x + 3 = 11$, then $x$ = ',
+          { blank: true, ans: '4', w: 50, fs: 15 },
+          '\\nThe quadratic $x^2 - 5x + 6 = 0$ factors as\\n$(x-2)(x-$ ',
+          { blank: true, ans: '3', w: 40 },
+          '$)$\\nThe discriminant $\\Delta$ is: ',
+          {
+            blank: true, ans: '1', w: 80,
+            type: 'select',
+            options: ['0', '1', '4', '9']
+          }
+        ]
+      }
+    ],
+    bubble: {
+      x: 60, y: 18, w: 37,
+      text: 'Remember: $\\Delta = b^2 - 4ac$.\\nFor $x^2-5x+6$: $\\Delta = 25 - 24 = 1$.',
+      style: 'bubble',
+      tail: 'left',
+      tailSize: 14,
+      tailOffset: 30,
+      bg: 'rgba(30,60,90,0.92)',
+      color: '#e2e8f0',
+      borderColor: '#4a90d9',
+      fs: 12
+    }
+  },
+
+  /* ── Group 2 (time auto = 20) ────────────────────────
+     Features: cloze with template + blanks inside LaTeX,
+     per-blank styling                                  */
+  {
+    label: 'Fractions in LaTeX',
+    maxTries: 2,
+    questions: [
+      {
+        type: 'label', x: 2, y: 4,
+        text: 'Fill in the missing values:',
+        fs: 13, color: '#e2e8f0', opacity: 0
+      },
+      {
+        type: 'cloze', x: 5, y: 16, w: 80, fs: 15,
+        color: '#e2e8f0',
+        template: '$\\frac{ {{0}} }{6} + \\frac{1}{ {{1}} } = 1$ and $2^{ {{2}} } = 16$',
+        blanks: [
+          { ans: '3', w: 30, fs: 14 },
+          { ans: '2', w: 30, fs: 14 },
+          { ans: '4', w: 30, fs: 14 }
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        x: 5, y: 58, w: 40,
+        text: '$\\frac{3}{6} = \\frac{1}{2}$ and $\\frac{1}{2} + \\frac{1}{2} = 1$',
+        style: 'bubble',
+        tail: 'top-left',
+        tailSize: 10,
+        tailOffset: 15,
+        bg: 'rgba(40,70,40,0.92)',
+        color: '#c6f6d5',
+        borderColor: '#48bb78',
+        fs: 12
+      },
+      {
+        x: 55, y: 58, w: 35,
+        text: '$2^4 = 16$. Exponent rules!',
+        style: 'bubble',
+        tail: 'top-right',
+        tailSize: 12,
+        tailOffset: 20,
+        bg: 'rgba(60,40,80,0.92)',
+        color: '#e9d8fd',
+        borderColor: '#9f7aea',
+        fs: 12
+      }
+    ]
+  },
+
+  /* ── Group 3 (time auto = 35) ────────────────────────
+     Features: match with aligned columns & colGap,
+     LaTeX in match items                               */
+  {
+    label: 'Match Derivatives',
+    maxTries: 2,
+    questions: [
+      {
+        type: 'match', x: 8, y: 8, w: 350,
+        left:  ['$f(x)=x^2$', '$f(x)=\\sin x$', '$f(x)=e^x$'],
+        right: ['$e^x$', '$2x$', '$\\cos x$'],
+        ans: [1, 2, 0],
+        dotSize: 14,
+        dotGap: 14,
+        colGap: 60,
+        fs: 13
+      }
+    ]
+  },
+
+  /* ── Group 4 (time auto = 50) ────────────────────────
+     Features: combobox as native dropdown (no label),
+     bubble items as group questions                    */
+  {
+    label: 'Dropdown & Bubbles',
+    maxTries: 2,
+    questions: [
+      {
+        type: 'bubble', x: 3, y: 5, w: 35,
+        text: 'Select the correct answer from\\nthe dropdown below.',
+        style: 'bubble',
+        tail: 'bottom',
+        tailSize: 10,
+        tailOffset: 25,
+        bg: 'rgba(50,50,80,0.92)',
+        color: '#e2e8f0',
+        borderColor: '#667eea',
+        fs: 12
+      },
+      {
+        type: 'bubble', x: 55, y: 5, w: 35,
+        text: 'Hint: Think about $\\pi \\approx 3.14159$',
+        style: 'bubble',
+        tail: 'bottom-right',
+        tailSize: 8,
+        tailOffset: 20,
+        bg: 'rgba(80,50,50,0.92)',
+        color: '#fed7d7',
+        borderColor: '#fc8181',
+        fs: 11
+      },
+      {
+        type: 'combobox', x: 10, y: 50, w: 30,
+        options: ['1.414', '2.718', '3.14159', '1.618'],
+        ans: '3.14159',
+        fs: 14
+      }
+    ]
+  },
+
+  /* ── Group 5 (time auto = 65) ────────────────────────
+     Features: hotspot with multiple correct answers    */
+  {
+    label: 'Multi-Select Hotspot',
+    time: 65,
+    maxTries: 2,
+    questions: [
+      {
+        type: 'label', x: 2, y: 3,
+        text: 'Click all prime numbers on the grid:',
+        fs: 13, color: '#e2e8f0', opacity: 0
+      },
+      {
+        type: 'hotspot', x: 15, y: 15, w: 70, h: 60,
+        src: 'data:image/svg+xml,' + encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" style="background:%23223">'
+          + '<text x="60" y="60" fill="%23fff" font-size="28" font-family="monospace">2</text>'
+          + '<text x="140" y="60" fill="%23fff" font-size="28" font-family="monospace">4</text>'
+          + '<text x="220" y="60" fill="%23fff" font-size="28" font-family="monospace">7</text>'
+          + '<text x="300" y="60" fill="%23fff" font-size="28" font-family="monospace">9</text>'
+          + '<text x="60" y="140" fill="%23fff" font-size="28" font-family="monospace">11</text>'
+          + '<text x="140" y="140" fill="%23fff" font-size="28" font-family="monospace">15</text>'
+          + '<text x="220" y="140" fill="%23fff" font-size="28" font-family="monospace">13</text>'
+          + '<text x="300" y="140" fill="%23fff" font-size="28" font-family="monospace">6</text>'
+          + '</svg>'
+        ),
+        spots: [
+          { x: 17, y: 28, r: 8, label: '2'  },
+          { x: 37, y: 28, r: 8, label: '4'  },
+          { x: 57, y: 28, r: 8, label: '7'  },
+          { x: 77, y: 28, r: 8, label: '9'  },
+          { x: 17, y: 68, r: 8, label: '11' },
+          { x: 37, y: 68, r: 8, label: '15' },
+          { x: 57, y: 68, r: 8, label: '13' },
+          { x: 77, y: 68, r: 8, label: '6'  }
+        ],
+        ans: [0, 2, 4, 6],
+        fs: 12
+      }
+    ]
+  },
+
+  /* ── Group 6 (time auto = 80) ────────────────────────
+     Features: radio with LaTeX choices, slider         */
+  {
+    label: 'Mixed Question Types',
+    maxTries: 3,
+    questions: [
+      {
+        type: 'radio', x: 2, y: 8, w: 40,
+        question: 'What is $\\int_0^1 x\\,dx$?',
+        choices: ['$0$', '$\\frac{1}{2}$', '$1$', '$\\frac{1}{3}$'],
+        ans: 1,
+        fs: 13,
+        color: '#e2e8f0'
+      },
+      {
+        type: 'slider', x: 55, y: 8, w: 40,
+        question: 'Approximate $\\sqrt{2}$:',
+        min: 1, max: 2, step: 0.01,
+        ans: 1.41, tol: 0.02,
+        unit: '',
+        fs: 13,
+        color: '#e2e8f0'
+      }
+    ]
+  }
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+</body>
+</html>

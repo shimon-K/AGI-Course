@@ -88,7 +88,7 @@ var GROUPS = [
           'Initialize k centroids',
           'Recompute centroids as means of assigned points'
         ],
-        ans: [1, 2, 3]
+        ans: [2, 0, 3, 1]
       },
       {
         type: 'radio', x: 4, y: 63, w: 50,
@@ -149,9 +149,9 @@ var GROUPS = [
         type: 'cloze', x: 4, y: 10, w: 92,
         parts: [
           'Points assigned to cluster C1: A=(0,4), B=(1,2), C=(3,2), F=(4,4). ',
-          'New centroid = mean of coordinates: x̄ = (0+1+3+4)/4 = ',
+          'New centroid = mean of coordinates: x̄ = ',
           { blank: true, ans: '2', w: 40 },
-          ', ȳ = (4+2+2+4)/4 = ',
+          ', ȳ = ',
           { blank: true, ans: '3', w: 40 },
           '. New C1 = (',
           { blank: true, ans: '2', w: 30 },
@@ -244,8 +244,8 @@ var GROUPS = [
         type: 'cloze', x: 4, y: 45, w: 92,
         parts: [
           'GMM with 2 clusters. For point x=1: π₁·N(1|μ₁=1,σ=1)=0.5×0.3989=0.1995, π₂·N(1|μ₂=5,σ=1)=0.5×0.0001=0.00005. ',
-          'Responsibility r₁ = 0.1995/(0.1995+0.00005) ≈ ',
-          { blank: true, ans: '0.9997', w: 65 },
+          'Responsibility r₁ ≈ ',
+          { blank: true, ans: '0.9997', w: 65, tol:0.01 },
           '. So point x=1 is almost entirely assigned to cluster ',
           { blank: true, ans: '1', w: 30 },
           '.'
@@ -277,7 +277,7 @@ var GROUPS = [
           'Start with each point as its own cluster',
           'Calculate distance between all cluster pairs'
         ],
-        ans: [1, 2, 3]
+        ans: [2, 3, 0, 1]
       },
       {
         type: 'radio', x: 4, y: 58, w: 42,

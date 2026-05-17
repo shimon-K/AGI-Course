@@ -206,7 +206,7 @@ var GROUPS = [
           'Compute entropy of the whole dataset',
           'Stop when nodes are pure or max depth reached'
         ],
-        ans: [1, 2, 3]
+        ans: [2, 1, 0, 3]
       },
       {
         type: 'checkbox', x: 4, y: 52, w: 50,
@@ -218,7 +218,7 @@ var GROUPS = [
           'Information Gain = H(parent) − weighted average H(children)',
           'They require feature scaling / normalization'
         ],
-        ans: [2, 3]
+        ans: [0, 2, 3]
       }
     ],
     bubbles: [ {
@@ -362,7 +362,51 @@ var GROUPS = [
       style: 'bubble', tailSize: 11, tail: 'top',
       x: 2, y: 64, w: 96
     }
+  },
+{
+  label: 'Classification - open-ended questions',
+  maxTries: 3,
+  questions: [
+         {  type:'label', x:5, y:8, fs:12, 
+             text:'Context: In logistic regression we use gradient descent to reach the minimum of an objective function.'
+         },
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:5, y:10, w:470, fs:14, lineSpacing:1.4,
+      parts: [
+        'Q1. What other method can reach the minimum of the function?\n',
+        { blank:true, ans:'By differentiating the function with respect to the model parameters and setting it to zero. Then solving the derivative equations and isolating the parameters.', type:'open', w:470, h:60 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:5, y:30, w:470, fs:14, lineSpacing:1.4,
+      parts: [
+        'Q2. Why did we not use that other method and instead used gradient descent?\n',
+        { blank:true, ans:'Because while you can compute the derivative and set it to zero, you cannot solve the resulting equations analytically due to the nonlinear component in the logistic regression output.', type:'open', w:470, h:60 }
+      ]
+    },
+    /* ── Q3: open-ended ── */
+    { type:'cloze', x:5, y:50, w:470, fs:14, lineSpacing:1.4,
+      parts: [
+        'Q3. How does gradient descent reach the minimum of the function?\n',
+        { blank:true, ans:'Iteratively: in each iteration, the parameters are updated by subtracting the gradient from the current parameters, i.e. w <- w - dL/dw.', type:'open', w:470, h:60 }
+      ]
+    },
+    /* ── Q4: open-ended ── */
+    { type:'cloze', x:5, y:70, w:40, fs:12, lineSpacing:1.4,
+      parts: [
+        'Q4. Why does it not matter which initial parameter vector we start from when training logistic regression?\n',
+        { blank:true, ans:'Because gradient descent always moves toward the minimum of the function. Regardless of the starting point, updating parameters by the gradient will decrease the function value at every iteration.', type:'open', w:470, h:60, fs:12 }
+      ]
+    },
+
+  ],
+  bubble: {
+    x:63, y:15, w:33,
+    style:'box', bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:14, borderRadius:6, padding:8,
+    text:'Q1: Differentiate the objective, set to 0, solve for parameters analytically.\\n\\n\\nQ2: The nonlinear sigmoid in logistic regression prevents an analytical closed-form solution.\\n\\n\\nQ3: Iteratively update ω ← ω − α·∂L/∂ω, descending toward the minimum each step.'
   }
+},
+
 ];
 </script>
 

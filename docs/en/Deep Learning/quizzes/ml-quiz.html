@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML &amp; LLM Course — Test Examples</title>
+  <link rel="stylesheet" href="youtube-quiz-engine.css" />
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+</head>
+<body>
+
+<div id="header">ML &amp; LLM Course &mdash; Test Examples</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the questions</div>
+  </div>
+</div>
+
+<div id="footer">quiz-engine v3 &bull; AI-assisted</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CONFIGURATION
+   ══════════════════════════════════════════════════════════════ */
+var VIDEO_ID = '';
+
+var BACKGROUND = {
+  enabled: true,
+  color: '#0f172a',
+  autoPlay: false
+};
+
+var DEFAULT_TIME_GAP = 15;
+var POST_QUIZ_DURATION = 20;
+
+/* AI: works out of the box with Pollinations.ai (free, no key needed).
+   To use a different provider, uncomment and configure:
+   var AI_CONFIG = {
+     provider: 'anthropic',                         // or 'openai'
+     endpoint: 'https://api.anthropic.com/v1/messages',
+     model:    'claude-sonnet-4-20250514',
+     apiKey:   'sk-ant-...'
+   };
+*/
+
+/* ══════════════════════════════════════════════════════════════
+   GROUPS
+   ══════════════════════════════════════════════════════════════ */
+var GROUPS = [
+
+/* ─────────────────────────────────────────────────────────────
+   GROUP 1 — Introduction to Machine Learning
+   ───────────────────────────────────────────────────────────── */
+{
+  label: 'Topic 1 — Introduction to Machine Learning',
+  time: 5,
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:2, y:1, w:47, fs:10, lineSpacing:1.4,
+      parts: [
+        'Q1. What are the three types of machine learning?\n',
+        { blank:true, ans:'Supervised learning, unsupervised learning, and reinforcement learning.', type:'open', w:370, h:40 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:2, y:16, w:47, fs:10, lineSpacing:1.4,
+      parts: [
+        'Q2. What is the main difference between supervised learning and unsupervised learning?\n',
+        { blank:true, ans:'In supervised learning there are both inputs and outputs, while in unsupervised learning there are only inputs.', type:'open', w:370, h:40 }
+      ]
+    },
+    /* ── Q3: True/False ── */
+    { type:'radio', x:2, y:32, w:46, fs:10,
+      question: 'Q3. In supervised learning, the model is trained and then used to produce output for new inputs.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q4: True/False ── */
+    { type:'radio', x:2, y:44, w:46, fs:10,
+      question: 'Q4. Tasks in unsupervised learning include clustering, dimensionality reduction, and regression.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q5: True/False ── */
+    { type:'radio', x:50, y:32, w:46, fs:10,
+      question: 'Q5. Predicting apartment prices is an example of a classification task.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q6: True/False ── */
+    { type:'radio', x:50, y:44, w:46, fs:10,
+      question: 'Q6. Both covariance and linear correlation are measures of a linear relationship.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q7: True/False ── */
+    { type:'radio', x:2, y:58, w:46, fs:10,
+      question: 'Q7. One of the tasks in unsupervised learning is dimensionality reduction of the input.',
+      choices: ['True','False'], ans: 0
+    },
+
+    /* Explanation bubbles */
+    { type:'bubble', x:50, y:58, w:44,
+      style:'box', bg:'rgba(30,41,59,0.92)', color:'#94a3b8', fs:9, borderColor:'#334155', borderRadius:6, padding:7,
+      text:'Q4: False — Regression is a supervised learning task.\nQ5: False — Predicting prices is a regression task, not classification.\nQ6 & Q7: True — By definition.'
+    }
+  ],
+  bubble: {
+    x:50, y:72, w:44,
+    style:'bubble', tail:'top-right', tailSize:9,
+    bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:9, borderRadius:8, padding:8,
+    text:'Q3: True — the model generalises to new inputs after training.\nQ4: False — regression is supervised.\nQ5: False — price prediction is regression.\nQ6–Q7: True by definition.'
+  }
+},
+
+/* ─────────────────────────────────────────────────────────────
+   GROUP 2 — Linear Models
+   ───────────────────────────────────────────────────────────── */
+{
+  label: 'Topic 2 — Linear Models',
+  time: 20,
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:2, y:0, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q1. What do linear correlation and covariance have in common?\n',
+        { blank:true, ans:'Both are measures of the linear relationship between variables.', type:'open', w:370, h:34 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:2, y:13, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q2. What is the difference between linear correlation and covariance?\n',
+        { blank:true, ans:'Linear correlation is a normalized covariance, scaled to the range [-1, 1].', type:'open', w:370, h:34 }
+      ]
+    },
+    /* ── Q3: open-ended ── */
+    { type:'cloze', x:2, y:26, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q3. What is the difference between linear regression and linear correlation?\n',
+        { blank:true, ans:'Linear regression describes the linear relationship itself, while linear correlation describes the strength of that linear relationship.', type:'open', w:370, h:34 }
+      ]
+    },
+    /* ── Q4: T/F ── */
+    { type:'radio', x:2, y:41, w:46, fs:9,
+      question: 'Q4. Linear regression and linear classification can both be described using a hyperplane equation.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q5: T/F ── */
+    { type:'radio', x:50, y:41, w:46, fs:9,
+      question: 'Q5. The hyperplane equation is simply a dot product of parameters with input features (no additional terms).',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q6: T/F ── */
+    { type:'radio', x:2, y:55, w:46, fs:9,
+      question: 'Q6. In linear regression, parameters are derived from an objective function and obtained through iterations.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q7: T/F ── */
+    { type:'radio', x:50, y:55, w:46, fs:9,
+      question: 'Q7. Logistic regression is a regression method, but its output is used for linear classification.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q8: T/F ── */
+    { type:'radio', x:2, y:70, w:46, fs:9,
+      question: 'Q8. If two variables are dependent on each other, they are necessarily linearly dependent.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q9: T/F ── */
+    { type:'radio', x:50, y:70, w:46, fs:9,
+      question: 'Q9. The stopping condition in linear classification is that some of the points are correctly classified.',
+      choices: ['True','False'], ans: 1
+    }
+  ],
+  bubble: {
+    x:2, y:84, w:94,
+    style:'box', bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:8, borderRadius:6, padding:6,
+    text:'Q4: True. Q5: False — the equation also includes a bias term. Q6: False — parameters are solved exactly via differentiation, not iteratively. Q7: True. Q8: False — dependence can be nonlinear (e.g. parabolic). Q9: False — ALL points must be correctly classified to stop.'
+  }
+},
+
+/* ─────────────────────────────────────────────────────────────
+   GROUP 3 — Classification (Part A: Gradient Methods)
+   ───────────────────────────────────────────────────────────── */
+{
+  label: 'Topic 3A — Classification: Gradient Methods',
+  time: 35,
+  maxTries: 3,
+  questions: [
+    { type:'label', x:2, y:0, fs:10, color:'#cbd5e1',
+      text:'Context: In logistic regression we use gradient descent to reach the minimum of an objective function.'
+    },
+
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:2, y:7, w:93, fs:10, lineSpacing:1.4,
+      parts: [
+        'Q1. What other method can reach the minimum of the function?\n',
+        { blank:true, ans:'By differentiating the function with respect to the model parameters and setting it to zero. Then solving the derivative equations and isolating the parameters.', type:'open', w:760, h:44 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:2, y:25, w:93, fs:10, lineSpacing:1.4,
+      parts: [
+        'Q2. Why did we not use that other method and instead used gradient descent?\n',
+        { blank:true, ans:'Because while you can compute the derivative and set it to zero, you cannot solve the resulting equations analytically due to the nonlinear component in the logistic regression output.', type:'open', w:760, h:44 }
+      ]
+    },
+    /* ── Q3: open-ended ── */
+    { type:'cloze', x:2, y:45, w:93, fs:10, lineSpacing:1.4,
+      parts: [
+        'Q3. How does gradient descent reach the minimum of the function?\n',
+        { blank:true, ans:'Iteratively: in each iteration, the parameters are updated by subtracting the gradient from the current parameters, i.e. w <- w - dL/dw.', type:'open', w:760, h:44 }
+      ]
+    }
+  ],
+  bubble: {
+    x:2, y:68, w:93,
+    style:'box', bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:9, borderRadius:6, padding:8,
+    text:'Q1: Differentiate the objective, set to 0, solve for parameters analytically.\nQ2: The nonlinear sigmoid in logistic regression prevents an analytical closed-form solution.\nQ3: Iteratively update ω ← ω − α·∂L/∂ω, descending toward the minimum each step.'
+  }
+},
+
+/* ─────────────────────────────────────────────────────────────
+   GROUP 4 — Classification (Part B: Models & Decision Trees)
+   ───────────────────────────────────────────────────────────── */
+{
+  label: 'Topic 3B — Classification: Models & Decision Trees',
+  time: 50,
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:2, y:0, w:93, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q1. Why does it not matter which initial parameter vector we start from when training logistic regression?\n',
+        { blank:true, ans:'Because gradient descent always moves toward the minimum of the function. Regardless of the starting point, updating parameters by the gradient will decrease the function value at every iteration.', type:'open', w:760, h:44 }
+      ]
+    },
+    /* ── Q2: T/F ── */
+    { type:'radio', x:2, y:18, w:46, fs:9,
+      question: 'Q2. Logistic regression is not used for classification.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q3: T/F ── */
+    { type:'radio', x:50, y:18, w:46, fs:9,
+      question: 'Q3. Logistic regression is a discriminative approach, while Naïve Bayes is a generative method.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q4: T/F ── */
+    { type:'radio', x:2, y:34, w:46, fs:9,
+      question: 'Q4. A decision tree model contains learnable parameters.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q5: T/F ── */
+    { type:'radio', x:50, y:34, w:46, fs:9,
+      question: 'Q5. As you go from the root of a decision tree down to its leaves, the class purity increases.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q6: T/F ── */
+    { type:'radio', x:2, y:50, w:93, fs:9,
+      question: 'Q6. At each tree node, when splitting by a feature, we evaluate several split candidates and choose the one that produces the highest class purity.',
+      choices: ['True','False'], ans: 0
+    }
+  ],
+  bubble: {
+    x:2, y:64, w:93,
+    style:'box', bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:9, borderRadius:6, padding:8,
+    text:'Q2: False — its output IS a class probability, so it IS used for classification.\nQ3: True — logistic computes P(y|x) directly; Naïve Bayes models P(x|y) generatively.\nQ4: False — decision trees are non-parametric (no weight vector to learn).\nQ5: True — each split is designed to increase class purity.\nQ6: True — this is exactly the greedy splitting procedure.'
+  }
+},
+
+/* ─────────────────────────────────────────────────────────────
+   GROUP 5 — Clustering + k-NN
+   ───────────────────────────────────────────────────────────── */
+{
+  label: 'Topic 4 — Clustering & k-NN',
+  time: 65,
+  maxTries: 3,
+  questions: [
+    /* ── Q1: open-ended ── */
+    { type:'cloze', x:2, y:0, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q1. What are the user-set (non-learned) parameters in k-NN?\n',
+        { blank:true, ans:'The parameter k (number of nearest neighbors to consider) and the distance metric used to measure proximity between points.', type:'open', w:370, h:40 }
+      ]
+    },
+    /* ── Q2: open-ended ── */
+    { type:'cloze', x:50, y:0, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q2. Is a small k value best for k-NN?\n',
+        { blank:true, ans:'No, because a small k overfits to the nearest data and does not generalize well to its surroundings.', type:'open', w:370, h:40 }
+      ]
+    },
+    /* ── Q3: open-ended ── */
+    { type:'cloze', x:2, y:18, w:47, fs:10, lineSpacing:1.35,
+      parts: [
+        'Q3. Is a very large k value good for k-NN?\n',
+        { blank:true, ans:'No, because it takes into account neighbors that are too far away to be relevant for the test point.', type:'open', w:370, h:40 }
+      ]
+    },
+    /* ── Q4: T/F ── */
+    { type:'radio', x:50, y:18, w:46, fs:9,
+      question: 'Q4. The parameter k plays the same role in k-nearest neighbors and k-Means.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q5: T/F ── */
+    { type:'radio', x:2, y:36, w:46, fs:9,
+      question: 'Q5. An advantage of k-NN is that no training is needed; a disadvantage is that prediction time depends on the size of the training data.',
+      choices: ['True','False'], ans: 0
+    },
+    /* ── Q6: T/F ── */
+    { type:'radio', x:50, y:36, w:46, fs:9,
+      question: 'Q6. In GMM (Gaussian Mixture Model), each data point belongs to exactly one cluster.',
+      choices: ['True','False'], ans: 1
+    },
+    /* ── Q7: T/F ── */
+    { type:'radio', x:2, y:52, w:93, fs:9,
+      question: 'Q7. In both GMM and k-Means, each iteration has two steps: first, fix parameters and assign points to clusters; second, fix assignments and update parameters.',
+      choices: ['True','False'], ans: 0
+    }
+  ],
+  bubble: {
+    x:2, y:66, w:93,
+    style:'box', bg:'rgba(30,41,59,0.94)', color:'#fbbf24', borderColor:'#f59e0b', fs:9, borderRadius:6, padding:8,
+    text:'Q4: False — in k-NN, k = number of neighbors for prediction; in k-Means, k = number of clusters.\nQ5: True — no training phase, but distance to every training point must be computed.\nQ6: False — GMM is soft-clustering; each point has a probability of belonging to every cluster.\nQ7: True — both use an Expectation-Maximization–style two-step iteration.'
+  }
+}
+
+];
+</script>
+
+<script src="youtube-quiz-engine.js"></script>
+</body>
+</html>

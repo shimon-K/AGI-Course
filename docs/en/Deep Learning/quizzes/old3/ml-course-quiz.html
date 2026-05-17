@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Course — Comprehensive Interactive Quiz</title>
+<link rel="stylesheet" href="youtube-quiz-engine.css">
+<style>
+  body { background: #fff; }
+  #header { background: #1e293b; color: #f1f5f9; font-size: 1.15em; letter-spacing: 0.5px; }
+  #footer { background: #f8fafc; color: #64748b; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — Comprehensive Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">▐▐ Paused — answer the question(s), then press ▶ to continue</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit · 4 Topics · 60 Questions</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   BLANK WHITE BACKGROUND MODE
+   ═══════════════════════════════════════════════════════════════ */
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  duration: 1860,
+  autoPlay: false
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMON STYLE PRESETS
+   ═══════════════════════════════════════════════════════════════ */
+var S = {
+  /* question box styles per topic */
+  t1: { bg:'rgba(239,246,255,0.97)', borderColor:'#3b82f6', color:'#1e293b', borderRadius:10, fs:14 },
+  t2: { bg:'rgba(240,253,244,0.97)', borderColor:'#22c55e', color:'#1e293b', borderRadius:10, fs:14 },
+  t3: { bg:'rgba(254,249,235,0.97)', borderColor:'#f59e0b', color:'#1e293b', borderRadius:10, fs:14 },
+  t4: { bg:'rgba(245,243,255,0.97)', borderColor:'#8b5cf6', color:'#1e293b', borderRadius:10, fs:14 },
+  /* bubble styles per topic */
+  b1: { style:'bubble', tail:'top', bg:'rgba(30,41,59,0.95)', color:'#93c5fd', borderColor:'#3b82f6', borderRadius:8, fontSize:12 },
+  b2: { style:'bubble', tail:'top', bg:'rgba(30,41,59,0.95)', color:'#86efac', borderColor:'#22c55e', borderRadius:8, fontSize:12 },
+  b3: { style:'bubble', tail:'top', bg:'rgba(30,41,59,0.95)', color:'#fde68a', borderColor:'#f59e0b', borderRadius:8, fontSize:12 },
+  b4: { style:'bubble', tail:'top', bg:'rgba(30,41,59,0.95)', color:'#c4b5fd', borderColor:'#8b5cf6', borderRadius:8, fontSize:12 }
+};
+
+/* helper to merge style presets */
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TOPIC 1 — LINEAR MODELS  (15 questions)
+   Covers: correlation, covariance, linear regression,
+   logistic regression, linear classifiers, SVM
+   ═══════════════════════════════════════════════════════════════ */
+var GROUPS = [
+
+  /* ── T1-Q1 (Easy · Radio) ── */
+  {
+    time: 5, maxTries: 2,
+    label: 'T1-Q1: Correlation coefficient',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What does the Pearson correlation coefficient (r) measure?',
+        choices: [
+          'The causal relationship between two variables',
+          'The strength and direction of the linear relationship between two variables',
+          'The average distance between data points',
+          'The probability that two variables are dependent'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ The Pearson correlation coefficient r ranges from −1 to +1 and measures the strength and direction of a LINEAR relationship. r = 1 means perfect positive linear correlation, r = −1 means perfect negative, and r = 0 means no linear correlation. Important: r = 0 does NOT imply independence — only the absence of a linear relationship.',
+      x: 4, y: 58, w: 92
+    })
+  },
+
+  /* ── T1-Q2 (Easy · True/False via radio) ── */
+  {
+    time: 20, maxTries: 2,
+    label: 'T1-Q2: r = 0 and independence',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'True or False: If the correlation coefficient r = 0, then the two variables are independent.',
+        choices: ['True', 'False'],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ False. r = 0 means the variables are linearly uncorrelated, but they may still have a non-linear dependence. For example, Y = X² has r ≈ 0 when X is symmetric around 0, yet Y is fully determined by X. Independence implies r = 0, but r = 0 does NOT imply independence.',
+      x: 4, y: 48, w: 92
+    })
+  },
+
+  /* ── T1-Q3 (Easy · Match) ── */
+  {
+    time: 35, maxTries: 2,
+    label: 'T1-Q3: Match linear models',
+    questions: [
+      m(S.t1, {
+        type: 'match', x: 4, y: 8, w: 280, fs: 13,
+        dotSize: 16, dotGap: 14,
+        left:  ['Linear Regression', 'Logistic Regression', 'SVM'],
+        right: ['Maximize margin between classes', 'Predict continuous output', 'Predict probability for classification'],
+        ans:   [1, 2, 0]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Linear Regression → Predict continuous output (minimizes sum of squared errors). Logistic Regression → Predict probability for classification (uses sigmoid function). SVM → Maximize margin between classes (finds the widest separating hyperplane).',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T1-Q4 (Easy · Cloze) ── */
+  {
+    time: 50, maxTries: 2,
+    label: 'T1-Q4: Regression objective',
+    questions: [
+      m(S.t1, {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'Linear regression finds the best-fit line by minimizing the sum of ',
+          { blank: true, ans: 'squared', w: 80 },
+          ' errors (also called OLS: Ordinary ',
+          { blank: true, ans: 'Least', w: 70 },
+          ' Squares). The solution can be found in ',
+          { blank: true, ans: 'closed', w: 70 },
+          '-form.'
+        ]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Linear regression minimizes the Sum of SQUARED Errors (SSE). The method is called Ordinary LEAST Squares (OLS). Unlike logistic regression which requires iterative optimization, linear regression has a direct CLOSED-form solution: β = (XᵀX)⁻¹Xᵀy.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q5 (Medium · Radio) ── */
+  {
+    time: 65, maxTries: 2,
+    label: 'T1-Q5: Optimization methods',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which optimization method does logistic regression typically use?',
+        choices: [
+          'Closed-form (direct) solution',
+          'Gradient Descent (iterative)',
+          'Random search',
+          'Dynamic programming'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Logistic regression uses iterative methods like Gradient Descent (or Newton\'s method). Unlike linear regression, the log-likelihood function for logistic regression has no closed-form solution due to the non-linear sigmoid function. The optimization iteratively updates weights in the direction that reduces the loss.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q6 (Medium · Ordering) ── */
+  {
+    time: 80, maxTries: 2,
+    label: 'T1-Q6: Order models by complexity',
+    questions: [
+      m(S.t1, {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order these linear models from simplest to most complex concept:',
+        items: ['SVM with margin', 'Linear correlation (r)', 'Logistic regression', 'Simple linear regression'],
+        ans:   [1, 3, 2, 0]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Correct order: (1) Linear correlation — just a statistic measuring linear association. (2) Simple linear regression — fits a line to minimize SSE. (3) Logistic regression — adds a sigmoid for classification with iterative optimization. (4) SVM with margin — adds the concept of maximizing the margin, with hard/soft formulations.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T1-Q7 (Medium · Numeric) ── */
+  {
+    time: 95, maxTries: 3,
+    label: 'T1-Q7: 1D regression calculation',
+    questions: [
+      m(S.t1, {
+        type: 'cloze', x: 4, y: 8, w: 92,
+        parts: [
+          'Given data: x = [1, 2, 3], y = [2, 3, 4]. The means are x̄ = 2, ȳ = 3. ',
+          'Using the 1D least-squares formula, the slope β₁ = ',
+          { blank: true, ans: '1', w: 50 },
+          ' and the intercept β₀ = ',
+          { blank: true, ans: '1', w: 50 },
+          '. So the fitted model is: ŷ = ',
+          { blank: true, ans: '1', w: 40 },
+          '·x + ',
+          { blank: true, ans: '1', w: 40 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Calculation: β₁ = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)² = [(−1)(−1) + (0)(0) + (1)(1)] / [(−1)² + 0² + 1²] = 2/2 = 1. Then β₀ = ȳ − β₁·x̄ = 3 − 1·2 = 1. So ŷ = 1·x + 1. This matches the presentation example on slide 45.',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T1-Q8 (Medium · Radio) ── */
+  {
+    time: 110, maxTries: 2,
+    label: 'T1-Q8: SVM margin',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What distinguishes SVM from a generic linear classifier?',
+        choices: [
+          'SVM uses a non-linear decision boundary',
+          'SVM finds ANY feasible separating hyperplane',
+          'SVM finds the UNIQUE hyperplane that maximizes the margin between classes',
+          'SVM does not require labeled data'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ While a generic linear classifier finds ANY feasible separating hyperplane, SVM specifically finds the UNIQUE hyperplane that maximizes the margin — the distance between the decision boundary and the nearest data points (support vectors). This makes SVM more robust to new data.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q9 (Medium · Checkbox) ── */
+  {
+    time: 125, maxTries: 2,
+    label: 'T1-Q9: Hyperplane properties',
+    questions: [
+      m(S.t1, {
+        type: 'checkbox', x: 4, y: 8, w: 92,
+        question: 'Select ALL true statements about hyperplanes:',
+        choices: [
+          'A hyperplane in 2D is a line',
+          'A hyperplane in 3D is a plane',
+          'The normal vector w is parallel to the hyperplane',
+          'The equation is wᵀx + b = 0',
+          'A hyperplane always passes through the origin'
+        ],
+        ans: [0, 1, 3]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Correct: A hyperplane in 2D is a line, in 3D is a plane, and the equation is wᵀx + b = 0. The normal vector w is PERPENDICULAR (not parallel) to the hyperplane. A hyperplane passes through the origin only when b = 0.',
+      x: 4, y: 65, w: 92
+    })
+  },
+
+  /* ── T1-Q10 (Medium · Slider) ── */
+  {
+    time: 140, maxTries: 3,
+    label: 'T1-Q10: Predict regression output',
+    questions: [
+      m(S.t1, {
+        type: 'slider', x: 4, y: 15, w: 92,
+        question: 'Given ŷ = 1·x + 1 (from earlier), what is ŷ when x = 5?',
+        min: 0, max: 20, step: 1,
+        ans: 6, tol: 0, unit: ''
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ ŷ = 1·(5) + 1 = 6. Simple substitution into the fitted regression equation. This is prediction/inference — using the trained model on new input.',
+      x: 4, y: 58, w: 92
+    })
+  },
+
+  /* ── T1-Q11 (Hard · Radio) ── */
+  {
+    time: 155, maxTries: 2,
+    label: 'T1-Q11: Perceptron update rule',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In the perceptron learning algorithm, when is the weight vector updated?',
+        choices: [
+          'After every data point regardless of classification',
+          'Only when a data point is misclassified (y·(w·x+b) ≤ 0)',
+          'Only at the end of each epoch',
+          'When the margin exceeds a threshold'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ The perceptron updates weights ONLY on misclassified points. The update rule is: if y·(wᵀx + b) ≤ 0 (misclassified), then w ← w + y·x and b ← b + y. As shown in the lecture example (slides 48-50), the algorithm iterates through data points and updates only when the current point is on the wrong side.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q12 (Hard · Numeric input) ── */
+  {
+    time: 170, maxTries: 3,
+    label: 'T1-Q12: Matrix regression',
+    questions: [
+      m(S.t1, {
+        type: 'cloze', x: 4, y: 5, w: 92,
+        parts: [
+          'Given x₁=[1,1], x₂=[2,0], x₃=[0,2] with y=[2,3,1] and using β = (XᵀX)⁻¹Xᵀy with an intercept column, ',
+          'compute XᵀX where X has rows [1,xᵢ₁,xᵢ₂]. The (1,1) element of XᵀX is ',
+          { blank: true, ans: '3', w: 40 },
+          ', the (2,2) element is ',
+          { blank: true, ans: '5', w: 40 },
+          ', and the (3,3) element is ',
+          { blank: true, ans: '5', w: 40 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ X = [[1,1,1],[1,2,0],[1,0,2]]. XᵀX: (1,1)=1²+1²+1²=3, (2,2)=1²+2²+0²=5, (3,3)=1²+0²+2²=5. This is the start of computing the closed-form solution β=(XᵀX)⁻¹Xᵀy as shown on slide 42-43.',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T1-Q13 (Hard · Radio) ── */
+  {
+    time: 185, maxTries: 2,
+    label: 'T1-Q13: Soft vs Hard margin SVM',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is the key difference between Hard-Margin SVM and Soft-Margin SVM?',
+        choices: [
+          'Hard-Margin uses a linear kernel, Soft-Margin uses a polynomial kernel',
+          'Soft-Margin allows some misclassifications by introducing slack variables',
+          'Hard-Margin is iterative, Soft-Margin has a closed-form solution',
+          'Soft-Margin always produces a wider margin'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Soft-Margin SVM introduces slack variables (ξ) that allow some data points to violate the margin or even be misclassified. This is essential when data is not perfectly linearly separable. The objective becomes: minimize ½||w||² + C·Σξᵢ, where C controls the trade-off between margin width and classification errors.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q14 (Hard · Radio) ── */
+  {
+    time: 200, maxTries: 2,
+    label: 'T1-Q14: Gradient descent mechanics',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In gradient descent, what determines the direction of each weight update?',
+        choices: [
+          'The random initialization of weights',
+          'The negative gradient of the loss function with respect to the weights',
+          'The positive gradient of the loss function',
+          'The second derivative (Hessian) of the loss'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ Gradient descent moves in the direction of the NEGATIVE gradient (steepest descent). The update rule is: w ← w − η·∇L(w), where η is the learning rate and ∇L(w) is the gradient of the loss. Moving opposite to the gradient reduces the loss. The learning rate controls the step size.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T1-Q15 (Easy · Radio) ── */
+  {
+    time: 215, maxTries: 2,
+    label: 'T1-Q15: Model summary',
+    questions: [
+      m(S.t1, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which linear model produces a UNIQUE separating hyperplane?',
+        choices: [
+          'Perceptron (linear classifier)',
+          'Logistic regression',
+          'Support Vector Machine (SVM)',
+          'Linear regression'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b1, {
+      text: '✓ SVM produces a UNIQUE separating hyperplane by maximizing the margin. The perceptron can find any feasible hyperplane (not unique). Logistic regression optimizes likelihood (typically unique, but not defined by margin). Linear regression is not a classifier — it predicts continuous values.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOPIC 2 — CLASSIFICATION METHODS  (15 questions)
+     Covers: Bayes theorem, generative vs discriminative,
+     Naive Bayes, decision trees, entropy, information gain
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ── T2-Q1 (Easy · Radio) ── */
+  {
+    time: 240, maxTries: 2,
+    label: 'T2-Q1: Generative vs Discriminative',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which statement correctly distinguishes generative from discriminative classifiers?',
+        choices: [
+          'Generative models learn P(y|x) directly; Discriminative models learn P(x,y)',
+          'Generative models learn the joint distribution P(x,y); Discriminative models learn P(y|x) directly',
+          'Both model types learn P(x,y) but use different optimization',
+          'Generative models require more data; Discriminative models require less'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Generative classifiers (e.g., Naive Bayes) model the joint P(x,y) or equivalently P(x|y)·P(y), learning how the data is generated. Discriminative classifiers (e.g., Logistic Regression) directly learn the decision boundary P(y|x) without modeling how x is distributed.',
+      x: 4, y: 58, w: 92
+    })
+  },
+
+  /* ── T2-Q2 (Easy · Match) ── */
+  {
+    time: 255, maxTries: 2,
+    label: 'T2-Q2: Match classifier types',
+    questions: [
+      m(S.t2, {
+        type: 'match', x: 4, y: 8, w: 260, fs: 13,
+        dotSize: 16, dotGap: 14,
+        left:  ['Naive Bayes', 'Logistic Regression', 'Decision Tree'],
+        right: ['Splits features by information gain', 'Assumes feature independence given class', 'Optimizes log-likelihood iteratively'],
+        ans:   [1, 2, 0]
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Naive Bayes assumes feature independence given the class label (its "naive" assumption). Logistic Regression optimizes the log-likelihood iteratively using gradient descent. Decision Trees split features recursively using criteria like information gain to increase class purity.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T2-Q3 (Easy · Cloze) ── */
+  {
+    time: 270, maxTries: 2,
+    label: 'T2-Q3: Bayes theorem',
+    questions: [
+      m(S.t2, {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'Bayes\' theorem states: P(y|x) = P(x|y) · P(y) / P(x). ',
+          'P(y) is called the ',
+          { blank: true, ans: 'prior', w: 70 },
+          ', P(x|y) is the ',
+          { blank: true, ans: 'likelihood', w: 90 },
+          ', and P(y|x) is the ',
+          { blank: true, ans: 'posterior', w: 90 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ In Bayes\' theorem: P(y) = PRIOR (belief before seeing data), P(x|y) = LIKELIHOOD (how likely the data is given the class), P(y|x) = POSTERIOR (updated belief after seeing data). P(x) is the evidence or marginal likelihood, acting as a normalizing constant.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q4 (Easy · Radio) ── */
+  {
+    time: 285, maxTries: 2,
+    label: 'T2-Q4: Entropy meaning',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In a decision tree, what does entropy measure?',
+        choices: [
+          'The depth of the tree',
+          'The number of features used',
+          'The impurity or uncertainty in a node',
+          'The accuracy of predictions'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Entropy H measures the impurity or uncertainty in a node. H = −Σ p(c)·log₂(p(c)) for each class c. When a node is pure (all one class), H = 0 (no uncertainty). When classes are equally mixed, H is maximal. Decision trees aim to reduce entropy with each split.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q5 (Easy · True/False) ── */
+  {
+    time: 300, maxTries: 2,
+    label: 'T2-Q5: Entropy of pure node',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'True or False: If a decision tree node contains only examples of class "Yes", its entropy is 0.',
+        choices: ['True', 'False'],
+        ans: 0
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ True! When a node is completely pure (all examples belong to one class), there is no uncertainty, so entropy = 0. H = −1·log₂(1) = 0. This is the ideal goal for leaf nodes — perfect purity.',
+      x: 4, y: 48, w: 92
+    })
+  },
+
+  /* ── T2-Q6 (Medium · Slider) ── */
+  {
+    time: 315, maxTries: 3,
+    label: 'T2-Q6: Calculate entropy',
+    questions: [
+      m(S.t2, {
+        type: 'slider', x: 4, y: 15, w: 92,
+        question: 'A node has 6 "Yes" and 4 "No" examples (total 10). What is the entropy H? (H = −0.6·log₂(0.6) − 0.4·log₂(0.4) ≈ ?). Slide to the nearest tenth.',
+        min: 0, max: 1, step: 0.01,
+        ans: 0.97, tol: 0.03, unit: ' bits'
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ H = −0.6·log₂(0.6) − 0.4·log₂(0.4) = −0.6·(−0.737) − 0.4·(−1.322) = 0.442 + 0.529 = 0.971 bits. This matches the "Buys Computer" example (slide 90) with Yes=6, No=4. Maximum entropy for binary is 1.0 (at p=0.5).',
+      x: 4, y: 58, w: 92
+    })
+  },
+
+  /* ── T2-Q7 (Medium · Radio) ── */
+  {
+    time: 330, maxTries: 2,
+    label: 'T2-Q7: Naive Bayes assumption',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is the "naive" assumption in Naive Bayes?',
+        choices: [
+          'The prior P(y) is always uniform',
+          'Features are conditionally independent given the class label',
+          'The likelihood P(x|y) follows a Gaussian distribution',
+          'Each feature contributes equally to the prediction'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ The "naive" assumption is that features are conditionally INDEPENDENT given the class: P(x₁,x₂,...,xₖ|y) = P(x₁|y)·P(x₂|y)·...·P(xₖ|y). This simplification makes computation tractable but rarely holds perfectly in practice. Despite this, Naive Bayes often works surprisingly well.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q8 (Medium · Radio) ── */
+  {
+    time: 345, maxTries: 2,
+    label: 'T2-Q8: Naive Bayes spam example',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Given: P(Weather=Sunny|Play=Yes)=0, P(Weather=Sunny|Play=No)=1, P(Play=Yes)=0.5, P(Play=No)=0.5. Using Naive Bayes, if Weather=Sunny, what is the prediction?',
+        choices: [
+          'Play = Yes',
+          'Play = No',
+          'Cannot determine',
+          'Equal probability for both'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ P(Yes|Sunny) ∝ P(Sunny|Yes)·P(Yes) = 0 × 0.5 = 0. P(No|Sunny) ∝ P(Sunny|No)·P(No) = 1 × 0.5 = 0.5. Since 0 < 0.5, prediction is Play = No. This follows the Naive Bayes example from slide 68.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q9 (Medium · Ordering) ── */
+  {
+    time: 360, maxTries: 2,
+    label: 'T2-Q9: Decision tree construction steps',
+    questions: [
+      m(S.t2, {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order the steps for building a decision tree:',
+        items: [
+          'Recursively split child nodes',
+          'Choose the feature with highest Information Gain as root',
+          'Compute entropy of the whole dataset',
+          'Stop when nodes are pure or max depth reached'
+        ],
+        ans: [2, 1, 0, 3]
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Steps: (1) Compute the entropy of the entire dataset. (2) Evaluate Information Gain for each feature and choose the one with the highest IG as the root split. (3) Recursively split child nodes using the same process. (4) Stop when nodes are pure (entropy=0) or a stopping criterion is met.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T2-Q10 (Medium · Checkbox) ── */
+  {
+    time: 375, maxTries: 2,
+    label: 'T2-Q10: Decision tree properties',
+    questions: [
+      m(S.t2, {
+        type: 'checkbox', x: 4, y: 8, w: 92,
+        question: 'Select ALL true statements about decision trees:',
+        choices: [
+          'They can be used for both classification and regression',
+          'They always produce globally optimal splits',
+          'They split features using a greedy algorithm',
+          'Information Gain = H(parent) − weighted average H(children)',
+          'They require feature scaling / normalization'
+        ],
+        ans: [0, 2, 3]
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ True: Decision trees work for BOTH classification and regression (slide 96). They use a GREEDY algorithm (not globally optimal). IG = H(parent) − Σ(|child|/|parent|)·H(child). They do NOT require feature scaling since splits are based on thresholds, not distances.',
+      x: 4, y: 65, w: 92
+    })
+  },
+
+  /* ── T2-Q11 (Hard · Numeric input) ── */
+  {
+    time: 390, maxTries: 3,
+    label: 'T2-Q11: Information Gain calculation',
+    questions: [
+      m(S.t2, {
+        type: 'cloze', x: 4, y: 5, w: 92,
+        parts: [
+          'From the "Buys Computer" dataset (slide 91): H(total) = 0.971 bits. Split by Age: H(≤30) = 0.811, H(31-40) = 0, H(>40) = 0.811. Weighted avg entropy = (4/10)·0.811 + (2/10)·0 + (4/10)·0.811 = ',
+          { blank: true, ans: '0.649', w: 60 },
+          '. Information Gain for Age = 0.971 − 0.649 = ',
+          { blank: true, ans: '0.322', w: 60 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Weighted avg H = (4/10)·0.811 + (2/10)·0 + (4/10)·0.811 = 0.3244 + 0 + 0.3244 = 0.6488 ≈ 0.649. IG(Age) = 0.971 − 0.649 = 0.322. This was the highest IG among all features, so Age was chosen as the root split (slide 91-93).',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T2-Q12 (Hard · Radio) ── */
+  {
+    time: 405, maxTries: 2,
+    label: 'T2-Q12: Maximum entropy',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'For a binary classification problem, what is the maximum possible entropy?',
+        choices: [
+          '0 bits',
+          '0.5 bits',
+          '1.0 bits',
+          '2.0 bits'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Maximum entropy for binary classification is 1.0 bit, achieved when P(class₁) = P(class₂) = 0.5. H = −0.5·log₂(0.5) − 0.5·log₂(0.5) = −0.5·(−1) − 0.5·(−1) = 1.0 bit. This represents maximum uncertainty — a coin flip.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q13 (Hard · Radio) ── */
+  {
+    time: 420, maxTries: 2,
+    label: 'T2-Q13: Buys computer prediction',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Using the decision tree from slide 89: A person aged 25 (≤30) who IS a student with fair credit. Does the tree predict they buy a computer?',
+        choices: [
+          'No — age ≤30 always leads to No',
+          'Yes — because age ≤30 and Student=Yes leads to Yes',
+          'No — because credit is fair',
+          'Cannot be determined from the tree'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Following the tree (slide 89): Age ≤ 30 → check Student → Student = Yes → prediction: YES (buys computer). The tree\'s rule is: (Age ≤ 30 and Student = Yes) → Yes. Age ≤ 30 does NOT always lead to No — it depends on the Student sub-split.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T2-Q14 (Hard · Radio) ── */
+  {
+    time: 435, maxTries: 2,
+    label: 'T2-Q14: NB spam classification',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Given 8 real and 4 spam emails. Real emails contain {Dear:8, Friend:5, Money:1}. Spam contains {Dear:2, Friend:1, Money:4}. Using Naive Bayes, is "Dear Friend" classified as Real or Spam?',
+        choices: [
+          'Spam — because spam contains the word "Dear"',
+          'Real — because P(Real) × P(Dear|Real) × P(Friend|Real) > P(Spam) × P(Dear|Spam) × P(Friend|Spam)',
+          'Spam — because P(Spam|Dear,Friend) > P(Real|Dear,Friend)',
+          'Cannot determine without P(x)'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ P(Real)=8/12=2/3, P(Spam)=4/12=1/3. P(Dear|R)=8/17≈0.47, P(Friend|R)=5/17≈0.29. P(Dear|S)=2/7≈0.29, P(Friend|S)=1/7≈0.14. Score(R)=(2/3)·0.47·0.29≈0.091. Score(S)=(1/3)·0.29·0.14≈0.014. Real >> Spam. Prediction: Real (slide 72).',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T2-Q15 (Medium · Radio) ── */
+  {
+    time: 450, maxTries: 2,
+    label: 'T2-Q15: Classification summary',
+    questions: [
+      m(S.t2, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which classifier is categorized as a generative model?',
+        choices: [
+          'Logistic Regression',
+          'SVM',
+          'Naive Bayes',
+          'Perceptron'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b2, {
+      text: '✓ Naive Bayes is a generative model — it models P(x|y)·P(y) (i.e., how data is generated per class) and uses Bayes\' rule to compute P(y|x). Logistic Regression, SVM, and Perceptron are all discriminative models that directly learn the decision boundary P(y|x) without modeling P(x|y).',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOPIC 3 — SUPERVISED LEARNING: k-NN & NEURAL NETWORKS (15 questions)
+     Covers: k-NN, shallow/deep NN, activation functions,
+     backpropagation, CNN, RNN, overfitting/underfitting
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ── T3-Q1 (Easy · Radio) ── */
+  {
+    time: 475, maxTries: 2,
+    label: 'T3-Q1: k-NN basics',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In k-NN classification, what does "k" represent?',
+        choices: [
+          'The number of features',
+          'The number of classes',
+          'The number of nearest neighbors used for voting',
+          'The number of training iterations'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ In k-NN, "k" is the number of nearest neighbors that vote on the class of a new data point. For k=1, the class is simply the label of the single nearest neighbor. For k=3, the three closest points vote by majority. k is a hyperparameter that affects model complexity.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q2 (Easy · True/False) ── */
+  {
+    time: 490, maxTries: 2,
+    label: 'T3-Q2: k-NN training',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'True or False: k-NN requires an explicit training phase where model parameters are learned.',
+        choices: ['True', 'False'],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ False! k-NN is a "lazy learner" — it has NO explicit training phase. It simply stores the training data and performs all computation at prediction time by calculating distances to all training points. This makes training instant but prediction slow for large datasets.',
+      x: 4, y: 48, w: 92
+    })
+  },
+
+  /* ── T3-Q3 (Easy · Radio) ── */
+  {
+    time: 505, maxTries: 2,
+    label: 'T3-Q3: Effect of k',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What happens when k is too large in k-NN?',
+        choices: [
+          'The model overfits to training data',
+          'The model becomes more sensitive to noise',
+          'The model underfits — it consults too many distant points',
+          'The model becomes faster at prediction'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Too large k causes underfitting: the model consults too many neighbors including distant, irrelevant points. Too small k (especially k=1) causes overfitting — it\'s sensitive to noise. The sweet spot is in between. As the lecture notes: low k = good for training, higher k = good for unseen data, too high k = bad.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q4 (Medium · Numeric) ── */
+  {
+    time: 520, maxTries: 3,
+    label: 'T3-Q4: k-NN distance calculation',
+    questions: [
+      m(S.t3, {
+        type: 'cloze', x: 4, y: 10, w: 92,
+        parts: [
+          'Classify point (3,2) with k=3. Training points: A(1,1)=Red, B(2,1)=Red, C(4,3)=Blue, D(5,4)=Blue. ',
+          'Euclidean distance to A = √((3−1)²+(2−1)²) = √5 ≈ ',
+          { blank: true, ans: '2.24', w: 55 },
+          '. Distance to B = √((3−2)²+(2−1)²) = √2 ≈ ',
+          { blank: true, ans: '1.41', w: 55 },
+          '. The 3 nearest are B, A, C. Red has ',
+          { blank: true, ans: '2', w: 35 },
+          ' votes. Prediction: ',
+          { blank: true, ans: 'Red', w: 50 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Distances: d(A)=√5≈2.24, d(B)=√2≈1.41, d(C)=√2≈1.41, d(D)=√8≈2.83. Three nearest: B(1.41), C(1.41), A(2.24). Votes: Red=2 (A,B), Blue=1 (C). Majority → Red. This follows the lecture example (slides 103-105).',
+      x: 4, y: 62, w: 92
+    })
+  },
+
+  /* ── T3-Q5 (Easy · Match) ── */
+  {
+    time: 535, maxTries: 2,
+    label: 'T3-Q5: NN types and tasks',
+    questions: [
+      m(S.t3, {
+        type: 'match', x: 4, y: 8, w: 260, fs: 13,
+        dotSize: 16, dotGap: 14,
+        left:  ['CNN', 'RNN', 'MLP (Feedforward)'],
+        right: ['Tabular / general data', 'Sequential / time-series data', 'Image / spatial data'],
+        ans:   [2, 1, 0]
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ CNN (Convolutional Neural Network) → Image/spatial data — uses kernels to detect spatial patterns. RNN (Recurrent Neural Network) → Sequential/time-series data — has memory of previous inputs. MLP (Multi-Layer Perceptron) → Tabular/general data — fully connected feedforward network.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T3-Q6 (Medium · Radio) ── */
+  {
+    time: 550, maxTries: 2,
+    label: 'T3-Q6: Activation for classification',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which activation function is used at the output layer for multi-class classification to produce a probability distribution?',
+        choices: [
+          'ReLU',
+          'Sigmoid',
+          'Softmax',
+          'Tanh'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Softmax converts a vector of raw scores into a probability distribution where all outputs sum to 1. It\'s used for multi-class classification (slide 122). Sigmoid outputs a single probability (0-1) for binary classification. ReLU and Tanh are used in hidden layers, not for classification output.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q7 (Medium · Ordering) ── */
+  {
+    time: 565, maxTries: 2,
+    label: 'T3-Q7: NN training steps',
+    questions: [
+      m(S.t3, {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order the steps in training a neural network:',
+        items: [
+          'Backward pass: compute gradients',
+          'Forward pass: compute predictions',
+          'Update weights using gradients',
+          'Compute loss from predictions vs true labels'
+        ],
+        ans: [1, 3, 0, 2]
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Neural network training loop: (1) Forward pass — input flows through layers to produce predictions. (2) Compute loss — compare predictions to true labels using a loss function. (3) Backward pass — compute gradients via backpropagation. (4) Update weights — w ← w − η·∇L (gradient descent). Repeat for many epochs.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T3-Q8 (Easy · Radio) ── */
+  {
+    time: 580, maxTries: 2,
+    label: 'T3-Q8: Overfitting vs Underfitting',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'A model has high accuracy on training data but low accuracy on test data. This is a sign of:',
+        choices: [
+          'Underfitting (high bias)',
+          'Overfitting (high variance)',
+          'Good generalization',
+          'Insufficient training data only'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ High training accuracy + low test accuracy = Overfitting (high variance). The model has memorized training data including noise, failing to generalize. Underfitting (high bias) would show low accuracy on BOTH sets. Solutions include: regularization, more data, cross-validation, or simpler models (slide 119-120).',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q9 (Medium · Checkbox) ── */
+  {
+    time: 595, maxTries: 2,
+    label: 'T3-Q9: CNN components',
+    questions: [
+      m(S.t3, {
+        type: 'checkbox', x: 4, y: 8, w: 92,
+        question: 'Select ALL operations commonly found in a Convolutional Neural Network (CNN):',
+        choices: [
+          'Convolution with learned kernels/filters',
+          'Pooling (e.g., max pooling)',
+          'Recurrent connections between layers',
+          'Fully connected layers at the end',
+          'Shared weights across spatial positions'
+        ],
+        ans: [0, 1, 3, 4]
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ CNN components: Convolution (learned kernels scanning the input), Pooling (reducing spatial dimensions, e.g., max pooling), Fully connected layers (at the end for classification), and Shared weights (kernels are applied across all positions). Recurrent connections belong to RNNs, not CNNs (slides 128-131).',
+      x: 4, y: 65, w: 92
+    })
+  },
+
+  /* ── T3-Q10 (Medium · Radio) ── */
+  {
+    time: 610, maxTries: 2,
+    label: 'T3-Q10: Backpropagation',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is the purpose of backpropagation in neural networks?',
+        choices: [
+          'To propagate the input data forward through the network',
+          'To compute the gradients of the loss with respect to each weight',
+          'To initialize the weights randomly',
+          'To select the optimal number of layers'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Backpropagation computes the gradient of the loss function with respect to each weight by applying the chain rule layer by layer, from output back to input (slide 115). These gradients tell us how much each weight contributed to the error, enabling gradient descent weight updates.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q11 (Medium · Cloze) ── */
+  {
+    time: 625, maxTries: 2,
+    label: 'T3-Q11: Bias-variance tradeoff',
+    questions: [
+      m(S.t3, {
+        type: 'cloze', x: 4, y: 15, w: 92,
+        parts: [
+          'A simple linear model typically has high ',
+          { blank: true, ans: 'bias', w: 60 },
+          ' and low ',
+          { blank: true, ans: 'variance', w: 70 },
+          '. A very complex model (e.g., deep NN) typically has low ',
+          { blank: true, ans: 'bias', w: 60 },
+          ' and high ',
+          { blank: true, ans: 'variance', w: 70 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ The bias-variance tradeoff (slide 119): Simple models → high BIAS (underfitting, can\'t capture patterns) + low VARIANCE (consistent across datasets). Complex models → low BIAS (flexible enough to fit patterns) + high VARIANCE (overfitting, sensitive to specific training data). The goal is to find the sweet spot.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q12 (Medium · Radio) ── */
+  {
+    time: 640, maxTries: 2,
+    label: 'T3-Q12: Pooling in CNN',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is the main purpose of pooling layers in a CNN?',
+        choices: [
+          'To increase the spatial resolution of feature maps',
+          'To reduce spatial dimensions and provide translation invariance',
+          'To learn new features from the input',
+          'To normalize the activations'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ Pooling (e.g., max pooling, average pooling) reduces the spatial dimensions of feature maps (slide 130). This provides: (1) computational efficiency, (2) reduced overfitting, and (3) some translation invariance — the network becomes less sensitive to exact positions of features.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q13 (Hard · Radio) ── */
+  {
+    time: 655, maxTries: 2,
+    label: 'T3-Q13: Cross-validation purpose',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Why is k-fold cross-validation preferred over a single train/test split?',
+        choices: [
+          'It trains the model k times faster',
+          'It reduces variance in the performance estimate by averaging across k splits',
+          'It eliminates the need for a test set entirely',
+          'It guarantees no overfitting'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ k-fold cross-validation (slide 120) splits data into k folds, trains on k−1 and tests on 1, rotating k times. The performance is averaged across all k splits, giving a more reliable and less variable estimate than a single split, which can be lucky/unlucky. It does NOT eliminate overfitting — it better detects it.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q14 (Hard · Radio) ── */
+  {
+    time: 670, maxTries: 2,
+    label: 'T3-Q14: Loss functions',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'For multi-class classification with mutually exclusive classes, which loss function is standard?',
+        choices: [
+          'Mean Squared Error (MSE)',
+          'Binary Cross-Entropy',
+          'Negative Log-Likelihood (NLL) / Categorical Cross-Entropy',
+          'Hinge Loss'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ For multi-class with mutually exclusive classes: use Softmax activation + NLL (Negative Log-Likelihood), also called Categorical Cross-Entropy (slide 122). Binary CE is for binary or multi-label tasks. MSE is for regression. Hinge loss is used in SVMs.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T3-Q15 (Hard · Radio) ── */
+  {
+    time: 685, maxTries: 2,
+    label: 'T3-Q15: RNN strength',
+    questions: [
+      m(S.t3, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What gives Recurrent Neural Networks (RNNs) their ability to handle sequential data?',
+        choices: [
+          'Convolutional filters that slide across the sequence',
+          'A hidden state that carries information from previous time steps',
+          'Attention mechanisms that weigh all positions equally',
+          'Pooling layers that summarize the sequence'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b3, {
+      text: '✓ RNNs maintain a hidden state sₖ that is updated at each time step: sₖ₊₁ = f(sₖ, xₖ) (slide 123). This hidden state acts as "memory", carrying information from previous inputs to influence the processing of later ones. Variants like LSTM and GRU (slide 125) address the vanishing gradient problem in basic RNNs.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     TOPIC 4 — CLUSTERING  (15 questions)
+     Covers: k-Means, GMM/EM, DBSCAN, Hierarchical clustering
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ── T4-Q1 (Easy · Radio) ── */
+  {
+    time: 710, maxTries: 2,
+    label: 'T4-Q1: Clustering is...',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Clustering is an example of which type of machine learning?',
+        choices: [
+          'Supervised learning',
+          'Unsupervised learning',
+          'Reinforcement learning',
+          'Semi-supervised learning'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ Clustering is unsupervised learning — the data has NO labels. The algorithm discovers natural groupings based on similarity/distance between data points. Unlike supervised learning, there are no "correct answers" to learn from (slide 138).',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q2 (Easy · True/False) ── */
+  {
+    time: 725, maxTries: 2,
+    label: 'T4-Q2: k-Means convergence',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'True or False: k-Means is guaranteed to converge to the global optimum.',
+        choices: ['True', 'False'],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ False! k-Means is guaranteed to converge (the objective decreases monotonically), but only to a LOCAL optimum — not necessarily the global one. The result depends on the initial centroid placement (slide 157). That\'s why it\'s common to run k-Means multiple times with different random initializations.',
+      x: 4, y: 48, w: 92
+    })
+  },
+
+  /* ── T4-Q3 (Easy · Ordering) ── */
+  {
+    time: 740, maxTries: 2,
+    label: 'T4-Q3: k-Means steps',
+    questions: [
+      m(S.t4, {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order the k-Means algorithm steps:',
+        items: [
+          'Assign each point to the nearest centroid',
+          'Check for convergence (assignments unchanged)',
+          'Initialize k centroids',
+          'Recompute centroids as means of assigned points'
+        ],
+        ans: [2, 0, 3, 1]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ k-Means: (1) Initialize k centroids (randomly or by chosen points). (2) Assign each data point to its nearest centroid (E-step). (3) Recompute centroids as the mean of assigned points (M-step). (4) Check convergence — repeat steps 2-3 until assignments no longer change (slides 140-156).',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T4-Q4 (Easy · Radio) ── */
+  {
+    time: 755, maxTries: 2,
+    label: 'T4-Q4: Hard vs Soft clustering',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which clustering method assigns each point a PROBABILITY of belonging to each cluster (soft clustering)?',
+        choices: [
+          'k-Means',
+          'DBSCAN',
+          'Gaussian Mixture Model (GMM)',
+          'Hierarchical clustering'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ GMM performs soft clustering — each point has a responsibility rₙₖ ∈ (0,1) representing the probability it belongs to cluster k (slide 164). k-Means does hard clustering (each point belongs to exactly one cluster). DBSCAN and hierarchical clustering also produce hard assignments.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q5 (Medium · Cloze) ── */
+  {
+    time: 770, maxTries: 2,
+    label: 'T4-Q5: k-Means centroid update',
+    questions: [
+      m(S.t4, {
+        type: 'cloze', x: 4, y: 10, w: 92,
+        parts: [
+          'Points assigned to cluster C1: A=(0,4), B=(1,2), C=(3,2), F=(4,4). ',
+          'New centroid = mean of coordinates: x̄ = (0+1+3+4)/4 = ',
+          { blank: true, ans: '2', w: 40 },
+          ', ȳ = (4+2+2+4)/4 = ',
+          { blank: true, ans: '3', w: 40 },
+          '. New C1 = (',
+          { blank: true, ans: '2', w: 30 },
+          ', ',
+          { blank: true, ans: '3', w: 30 },
+          ').'
+        ]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ The new centroid is simply the arithmetic mean of all points assigned to the cluster. x̄ = (0+1+3+4)/4 = 8/4 = 2. ȳ = (4+2+2+4)/4 = 12/4 = 3. So C1 = (2,3). This is the M-step of k-Means (slides 148, 151, 154).',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T4-Q6 (Medium · Match) ── */
+  {
+    time: 785, maxTries: 2,
+    label: 'T4-Q6: Match clustering methods',
+    questions: [
+      m(S.t4, {
+        type: 'match', x: 4, y: 8, w: 280, fs: 13,
+        dotSize: 16, dotGap: 14,
+        left:  ['k-Means', 'DBSCAN', 'Hierarchical', 'GMM'],
+        right: ['Produces a dendrogram', 'Density-based; handles noise', 'Uses Gaussian probabilities', 'Minimizes within-cluster variance'],
+        ans:   [3, 1, 0, 2]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ k-Means → Minimizes within-cluster variance (sum of squared distances to centroids). DBSCAN → Density-based, identifies noise points. Hierarchical → Builds a tree (dendrogram) by merging/splitting. GMM → Models clusters as Gaussian distributions with probabilities.',
+      x: 4, y: 72, w: 92
+    })
+  },
+
+  /* ── T4-Q7 (Medium · Checkbox) ── */
+  {
+    time: 800, maxTries: 2,
+    label: 'T4-Q7: DBSCAN parameters',
+    questions: [
+      m(S.t4, {
+        type: 'checkbox', x: 4, y: 8, w: 92,
+        question: 'Select ALL parameters required by DBSCAN:',
+        choices: [
+          'k — number of clusters',
+          'ε (eps) — maximum distance between neighbors',
+          'MinPts — minimum points to form a core point',
+          'σ — variance of Gaussian distribution',
+          'Linkage type (single, complete, average)'
+        ],
+        ans: [1, 2]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ DBSCAN requires only two parameters (slide 183): ε (epsilon) — the maximum distance for two points to be neighbors, and MinPts — the minimum number of neighbors within ε for a point to be a "core point." Unlike k-Means, DBSCAN does NOT need k (number of clusters) — it discovers clusters automatically!',
+      x: 4, y: 65, w: 92
+    })
+  },
+
+  /* ── T4-Q8 (Medium · Radio) ── */
+  {
+    time: 815, maxTries: 2,
+    label: 'T4-Q8: DBSCAN point types',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'In DBSCAN, a point with fewer than MinPts neighbors within ε, but which is within ε of a core point, is called a:',
+        choices: [
+          'Core point',
+          'Border point',
+          'Noise point',
+          'Centroid'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ Border point — it doesn\'t have enough neighbors to be a core point itself, but it\'s close enough to a core point to belong to its cluster (slide 184). Core points have ≥ MinPts neighbors. Noise points are not close to any core point and don\'t belong to any cluster.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q9 (Medium · Radio) ── */
+  {
+    time: 830, maxTries: 2,
+    label: 'T4-Q9: GMM components',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What are the parameters of a Gaussian Mixture Model (GMM)?',
+        choices: [
+          'Only the means (μₖ) for each cluster',
+          'Means (μₖ), covariances (Σₖ), and mixing coefficients (πₖ)',
+          'Only the centroids and cluster assignments',
+          'ε and MinPts'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ GMM parameters (slides 162-164): For each of K clusters: μₖ (mean/center), Σₖ (covariance matrix describing shape/spread), and πₖ (mixing coefficient — prior probability of cluster k, where Σπₖ=1). These are learned iteratively using the EM algorithm.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q10 (Medium · Radio) ── */
+  {
+    time: 845, maxTries: 2,
+    label: 'T4-Q10: k-Means limitation',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which cluster shape is k-Means UNABLE to discover correctly?',
+        choices: [
+          'Spherical (round) clusters',
+          'Equally-sized clusters',
+          'Non-convex or ring-shaped clusters',
+          'Clusters with the same density'
+        ],
+        ans: 2
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ k-Means uses distance to centroids, so it naturally forms convex (roughly spherical) clusters. It CANNOT correctly identify non-convex shapes like rings, crescents, or interleaving spirals (slide 157). For such shapes, density-based methods like DBSCAN or spectral clustering are needed.',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q11 (Hard · Cloze) ── */
+  {
+    time: 860, maxTries: 3,
+    label: 'T4-Q11: GMM E-step calculation',
+    questions: [
+      m(S.t4, {
+        type: 'cloze', x: 4, y: 5, w: 92,
+        parts: [
+          'GMM with 2 clusters. For point x=1: π₁·N(1|μ₁=1,σ=1)=0.5×0.3989=0.1995, π₂·N(1|μ₂=5,σ=1)=0.5×0.0001=0.00005. ',
+          'Responsibility r₁ = 0.1995/(0.1995+0.00005) ≈ ',
+          { blank: true, ans: '0.9997', w: 65 },
+          '. So point x=1 is almost entirely assigned to cluster ',
+          { blank: true, ans: '1', w: 30 },
+          '.'
+        ]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ The E-step computes responsibilities: r₁ = π₁·N(x|μ₁,σ₁) / [π₁·N(x|μ₁,σ₁) + π₂·N(x|μ₂,σ₂)] = 0.1995/0.2 ≈ 0.9997. Point x=1 is virtually 100% assigned to cluster 1 (μ₁=1), which makes intuitive sense since x=1 is far from μ₂=5. This is the E-step from slide 174.',
+      x: 4, y: 60, w: 92
+    })
+  },
+
+  /* ── T4-Q12 (Medium · Ordering) ── */
+  {
+    time: 875, maxTries: 2,
+    label: 'T4-Q12: Hierarchical clustering steps',
+    questions: [
+      m(S.t4, {
+        type: 'ordering', x: 4, y: 8, w: 92,
+        question: 'Order the steps of bottom-up (agglomerative) hierarchical clustering:',
+        items: [
+          'Merge the two closest clusters',
+          'Repeat until one cluster remains',
+          'Start with each point as its own cluster',
+          'Calculate distance between all cluster pairs'
+        ],
+        ans: [2, 3, 0, 1]
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ Bottom-up hierarchical clustering (slide 180): (1) Start with each point as its own cluster. (2) Calculate distances between every pair of clusters. (3) Merge the two closest clusters. (4) Repeat steps 2-3 until only one cluster remains. The result is visualized as a dendrogram.',
+      x: 4, y: 68, w: 92
+    })
+  },
+
+  /* ── T4-Q13 (Easy · Radio) ── */
+  {
+    time: 890, maxTries: 2,
+    label: 'T4-Q13: Dendrogram',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'What is a dendrogram in the context of hierarchical clustering?',
+        choices: [
+          'A scatter plot of cluster centroids',
+          'A tree diagram showing the sequence of cluster merges and their distances',
+          'A bar chart of cluster sizes',
+          'A confusion matrix for cluster assignments'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ A dendrogram (slide 178) is a tree diagram that shows the hierarchical merging sequence. The y-axis represents the distance/dissimilarity at which clusters were merged. By cutting the dendrogram at a chosen height, you can obtain any desired number of clusters — from coarse (few clusters) to granular (many clusters).',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q14 (Hard · Radio) ── */
+  {
+    time: 905, maxTries: 2,
+    label: 'T4-Q14: DBSCAN vs k-Means',
+    questions: [
+      m(S.t4, {
+        type: 'radio', x: 4, y: 8, w: 92,
+        question: 'Which advantage does DBSCAN have over k-Means?',
+        choices: [
+          'DBSCAN always runs faster',
+          'DBSCAN can find clusters of arbitrary shape and identify noise points',
+          'DBSCAN guarantees finding the global optimum',
+          'DBSCAN requires fewer parameters'
+        ],
+        ans: 1
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ DBSCAN\'s key advantages over k-Means (slide 187): (1) Can discover clusters of arbitrary shape (not just spherical). (2) Identifies noise/outlier points. (3) Does not require specifying k (number of clusters). Limitations: struggles with varying densities and high-dimensional data (slide 188).',
+      x: 4, y: 55, w: 92
+    })
+  },
+
+  /* ── T4-Q15 (Hard · Slider) ── */
+  {
+    time: 920, maxTries: 3,
+    label: 'T4-Q15: Euclidean distance',
+    questions: [
+      m(S.t4, {
+        type: 'slider', x: 4, y: 15, w: 92,
+        question: 'Calculate the Euclidean distance between points (1,2) and (4,6). d = √((4−1)²+(6−2)²) = ?',
+        min: 0, max: 10, step: 0.1,
+        ans: 5, tol: 0.1, unit: ''
+      })
+    ],
+    bubble: m(S.b4, {
+      text: '✓ d = √((4−1)² + (6−2)²) = √(9 + 16) = √25 = 5.0. Euclidean distance is the most common distance metric used in k-Means, k-NN, and other distance-based algorithms. It\'s the "straight-line" distance in the feature space.',
+      x: 4, y: 58, w: 92
+    })
+  }
+
+];
+</script>
+
+<!-- Shared engine — all quiz logic lives here -->
+<script src="youtube-quiz-engine.js"></script>
+
+</body>
+</html>
