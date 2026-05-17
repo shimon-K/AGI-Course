@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine stylesheet -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css" />
+</head>
+<body>
+
+<div id="header">⬛ Math for ML - Probability</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   CONFIGURATION
+   ══════════════════════════════════════════════════════════════════ */
+
+// YouTube video
+var VIDEO_ID = 'VHSGq44WwK0';
+
+/* ──────────────────────────────────────────────────────────────────
+   EXERCISE 2  —  Toothache / Cavity / Catch  (appears at 1:00)
+   ──────────────────────────────────────────────────────────────────
+   Joint distribution (from Figure 13.3):
+                   toothache               ¬toothache
+                catch   ¬catch         catch    ¬catch
+   cavity       0.108   0.012         0.072    0.008
+   ¬cavity      0.016   0.064         0.144    0.576
+
+   Computed answers:
+   • P(cavity)             = 0.108+0.012+0.072+0.008 = 0.2
+   • P(toothache)          = 0.108+0.012+0.016+0.064 = 0.2
+   • P(cavity ∧ toothache) = 0.108+0.012              = 0.12
+   • P(cavity ∨ toothache) = 0.2+0.2−0.12             = 0.28
+   • P(¬cavity ∧ toothache)= 0.016+0.064              = 0.08
+   • P(¬cavity | toothache)= 0.08 / 0.2               = 0.4
+   • P(toothache ∨ catch)  = 1−P(¬tooth ∧ ¬catch)
+                           = 1−(0.008+0.576)           = 0.416
+   • P(cavity ∧ (tooth∨catch)) = 0.108+0.012+0.072    = 0.192
+   • P(cavity | tooth∨catch)   = 0.192 / 0.416         ≈ 0.4615
+   ────────────────────────────────────────────────────────────────── */
+
+/* ──────────────────────────────────────────────────────────────────
+   EXERCISE 1  —  Bivariate distribution of X and Y  (appears at 1:20)
+   ──────────────────────────────────────────────────────────────────
+   p(x,y):
+           x1    x2    x3    x4    x5
+   y1    0.01  0.02  0.03  0.10  0.10
+   y2    0.05  0.10  0.05  0.07  0.20
+   y3    0.10  0.05  0.03  0.05  0.04
+
+   Marginal p(x):
+     p(x1) = 0.16,  p(x2) = 0.17,  p(x3) = 0.11,
+     p(x4) = 0.22,  p(x5) = 0.34
+
+   Marginal p(y):
+     p(y1) = 0.26,  p(y2) = 0.47,  p(y3) = 0.27
+
+   Conditional p(x | Y=y1):  each p(xi,y1)/p(y1)
+     1/26, 2/26, 3/26, 10/26, 10/26
+     ≈ 0.0385, 0.0769, 0.1154, 0.3846, 0.3846
+
+   Conditional p(y | X=x3):  each p(x3,yj)/p(x3)
+     3/11, 5/11, 3/11
+     ≈ 0.2727, 0.4545, 0.2727
+   ────────────────────────────────────────────────────────────────── */
+
+var GROUPS = [
+
+  /* ════════════════════════════════════════════════════════════════
+     GROUP 1 — Exercise 2 (at t = 60 s = 1:00)
+     ════════════════════════════════════════════════════════════════ */
+  {
+    label: 'Exercise 2 – Toothache / Cavity / Catch',
+    time: 154,
+    maxTries: 3,
+    questions: [
+
+      /* ── Q1: P(cavity ∨ toothache) ── */
+      {
+        x: 53, y: 55,
+        w: 70, fs: 14,
+        ans: '0.28', tol: 0.005,
+        opacity: 0.85
+      },
+
+      /* ── Q2: P(cavity) ── */
+      {
+        x: 36, y: 62.5,
+        w: 60, fs: 14,
+        ans: '0.2', tol: 0.005,
+        opacity: 0.85
+      },
+
+      /* ── Q3: P(¬cavity | toothache) = numerator / denominator = result ── */
+      /* Using cloze for the fractional form */
+      {
+        type: 'cloze',
+        x: 55, y: 75.5, w: 55,
+        fs: 16,
+        //opacity: 0.05,
+        template: '$\\frac{ {{0}} }{ {{1}} }$  \\qquad   {{2}}',
+        blanks: [
+          { ans: '0.08',  w: 78 },
+          { ans: '0.2',   w: 78 },
+          { ans: '0.4',   w: 52 }
+        ]
+      },
+
+      /* ── Q4: P(cavity | toothache ∨ catch) = num / denom = result ── */
+      {
+        type: 'cloze',
+        x: 62, y: 84.5, w: 46,
+        fs: 16,
+        //opacity: 0.05,
+        template: '$\\frac{ {{0}} }{ {{1}} }$  \\qquad {{2}}',
+        blanks: [
+          { ans: '0.192',  w: 72 },
+          { ans: '0.416',  w: 72 },
+          { ans: '0.4615', w: 60 }
+        ]
+      }
+    ],
+
+    /* Explanation bubbles — shown when "Answer" is clicked */
+    bubbles: [
+      {
+        x: 65, y: 46, w: 34,
+        style: 'bubble', tail: 'left', tailOffset: 80,
+        bg: 'rgba(255,248,210,0.96)', borderColor: '#c0a030',
+        fs: 10.5, padding: 8,
+        text: 'P(cavity ∨ toothache) = P(cav)+P(tooth)−P(cav∧tooth)\\n= 0.2 + 0.2 − 0.12 = 0.28\\n\nP(cavity) = sum of cavity row = 0.2'
+      },
+      {
+        x: 53, y: 62, w: 45,
+        style: 'bubble', tail: 'bottom', tailOffset: 30,
+        bg: 'rgba(210,240,255,0.96)', borderColor: '#4a90d9',
+        fs: 10.5, padding: 8,
+        text: 'Bayes rule:\nP(¬cav|tooth) = P(¬cav∧tooth)/P(tooth)\n= 0.08/0.2 = 0.4\n\nP(cav|tooth∨catch) = P(cav∧(tooth∨catch))/P(tooth∨catch)\n= 0.192/0.416 ≈ 0.4615'
+      }
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════════
+     GROUP 2 — Exercise 1 (at t = 80 s = 1:20)
+     ════════════════════════════════════════════════════════════════ */
+  {
+    id: 'ex1',
+    label: 'Exercise 1 – Bivariate Distribution',
+    time: 147,
+    maxTries: 3,
+    questions: [
+
+      /* ── Q1: Marginal p(x) — 5 values ── */
+      {
+        type: 'cloze',
+        x: 31, y: 72, w: 33,
+        fs: 12,
+        opacity: 0.85,
+        lineSpacing: 1.7,
+        template: '( {{0}}, {{1}}, {{2}}, {{3}}, {{4}} )',
+        blanks: [
+          { ans: '0.16', w: 38 },
+          { ans: '0.17', w: 38 },
+          { ans: '0.11', w: 38 },
+          { ans: '0.22', w: 38 },
+          { ans: '0.34', w: 38 }
+        ]
+      },
+
+      /* ── Q2: Marginal p(y) — 3 values ── */
+      {
+        type: 'cloze',
+        x: 72, y: 72, w: 25,
+        fs: 12,
+        opacity: 0.85,
+        lineSpacing: 1.7,
+        template: '( {{0}}, {{1}}, {{2}} )',
+        blanks: [
+          { ans: '0.26', w: 38 },
+          { ans: '0.47', w: 38 },
+          { ans: '0.27', w: 38 }
+        ]
+      },
+
+      /* ── Q3: Conditional p(x | Y = y1) — 5 values ── */
+      {
+        type: 'cloze',
+        x: 38, y: 81, w: 56,
+        fs: 12,
+        opacity: 0.85,
+        lineSpacing: 1.7,
+        template: '( {{0}}, {{1}}, {{2}}, {{3}}, {{4}} )',
+        blanks: [
+          { ans: '1/26',  w: 44 },
+          { ans: '2/26',  w: 44 },
+          { ans: '3/26',  w: 44 },
+          { ans: '10/26', w: 44 },
+          { ans: '10/26', w: 44 }
+        ]
+      },
+
+      /* ── Q4: Conditional p(y | X = x3) — 3 values ── */
+      {
+        type: 'cloze',
+        x: 38, y: 89, w: 40,
+        fs: 12,
+        opacity: 0.85,
+        lineSpacing: 1.7,
+        template: '( {{0}}, {{1}}, {{2}} )',
+        blanks: [
+          { ans: '3/11', w: 44 },
+          { ans: '5/11', w: 44 },
+          { ans: '3/11', w: 44 }
+        ]
+      }
+    ],
+
+    /* Explanation bubbles */
+    bubbles: [
+      {
+        x: 2, y: 3, w: 40,
+        style: 'bubble', tail: 'bottom', tailOffset: 50,
+        bg: 'rgba(230,255,230,0.96)', borderColor: '#4a9950',
+        fs: 10, padding: 8,
+        text: 'Marginals: sum each column for p(x), sum each row for p(y).\np(x₁)=0.16  p(x₂)=0.17  p(x₃)=0.11  p(x₄)=0.22  p(x₅)=0.34\np(y₁)=0.26  p(y₂)=0.47  p(y₃)=0.27'
+      },
+      {
+        x: 50, y: 3, w: 46,
+        style: 'bubble', tail: 'bottom-left', tailOffset: 30,
+        bg: 'rgba(240,230,255,0.96)', borderColor: '#7a5db5',
+        fs: 10, padding: 8,
+        text: 'Conditionals:\np(xᵢ|Y=y₁) = p(xᵢ,y₁)/p(y₁)  →  divide y₁ row by 0.26\np(yⱼ|X=x₃) = p(x₃,yⱼ)/p(x₃)  →  divide x₃ column by 0.11'
+      }
+    ]
+  }
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+
+</body>
+</html>
