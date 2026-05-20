@@ -813,15 +813,13 @@ html, body {
 
 .q-cloze-input {
   display: inline-block;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
   border: 2px solid #000;
   background: transparent;
   color: #000;
+  -webkit-text-fill-color: #000;
   font-family: inherit;
   font-size: inherit;
   text-align: center;
-  text-shadow: none !important;
   padding: 1px 4px;
   margin: 0 2px;
   outline: none;
@@ -836,37 +834,46 @@ html, body {
 .q-cloze-input[readonly],
 .q-cloze-input[disabled] { opacity: 0.6; cursor: default; }
 
-/* Cloze dropdown (native select) */
+/* Cloze dropdown (select) */
 .q-cloze-select {
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
   border: 2px solid #000;
   background: transparent;
   color: #000;
   font-family: inherit;
   font-size: inherit;
   text-align: center;
-  text-shadow: none !important;
   padding: 1px 4px;
   margin: 0 2px;
   outline: none;
   vertical-align: baseline;
   cursor: pointer;
   appearance: auto;
-  transition: border-color 0.2s, background 0.2s;
 }
 .q-cloze-select:focus { border-color: rgba(0,0,0,0.5); }
 .q-cloze-select.ok   { border-color: #27ae60; background: rgba(39,174,96,0.18); }
 .q-cloze-select.no   { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
 
-/* Custom cloze select (LaTeX-capable dropdown) — layout overrides only */
+/* Custom cloze select (LaTeX-capable dropdown) */
 .q-cloze-select-custom {
   position: relative;
+  display: inline-block;
+  border: 2px solid #000;
+  background: transparent;
+  color: #000;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: center;
   padding: 2px 20px 2px 6px;
+  margin: 0 2px;
+  outline: none;
+  vertical-align: baseline;
   cursor: pointer;
   min-width: 60px;
   user-select: none;
 }
+.q-cloze-select-custom:focus { border-color: rgba(0,0,0,0.5); }
+.q-cloze-select-custom.ok   { border-color: #27ae60; background: rgba(39,174,96,0.18); }
+.q-cloze-select-custom.no   { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
 .q-cloze-select-custom.disabled { opacity: 0.6; cursor: default; pointer-events: none; }
 
 .cloze-sel-display { pointer-events: none; }
@@ -913,9 +920,6 @@ html, body {
   border: 2px solid #27ae60;
   background: rgba(39,174,96,0.18);
   color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
   padding: 1px 4px;
   margin: 0 2px;
   vertical-align: baseline;
@@ -934,9 +938,6 @@ html, body {
   border-radius: 0;
   background: transparent;
   color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
   font-family: 'Calibri', 'Carlito', sans-serif;
   font-size: inherit;
   text-align: left;
@@ -967,9 +968,6 @@ html, body {
   border-radius: 0;
   background: transparent;
   color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
   padding: 6px 8px;
   margin: 4px 0;
   font-family: 'Calibri', 'Carlito', sans-serif;

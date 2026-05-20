@@ -328,11 +328,6 @@ function _checkHotspot(q) {
   return q.userAns === q.ans;
 }
 
-/** Strip $...$ and $$...$$ delimiters from a string for plain-text comparison */
-function _stripLatex(s) {
-  return s.replace(/\$\$([^$]+?)\$\$/g, '$1').replace(/\$([^$]+?)\$/g, '$1');
-}
-
 /** Check cloze & sync DOM values into blanks */
 function _checkCloze(q) {
   var allOk = true;
@@ -340,8 +335,7 @@ function _checkCloze(q) {
   q._blanks.forEach(function (bObj, bi) {
     var el = document.getElementById('cloze-' + q.id + '-' + bi);
     if (!el) { allOk = false; return; }
-    bObj.userAns = el.value.trim();
-    var isSelect = el.tagName === 'SELECT' || el.tagName_compat === 'SELECT';
+    bObj.userAns = (el.tagName === 'SELECT' ? el.value : el.value).trim();
 
     /* open-ended blanks — defer to AI evaluation */
     if (el.dataset.open === '1') {
@@ -350,24 +344,13 @@ function _checkCloze(q) {
       return; /* skip exact-match check */
     }
 
-    /* For selects, compare raw values directly (both include $...$).
-       For text inputs, strip LaTeX delimiters from answer before comparing. */
-    var compareAns = isSelect ? bObj.ans : _stripLatex(bObj.ans);
-    var compareUser = isSelect ? bObj.userAns : bObj.userAns;
-
-    if (isSelect) {
-      /* Select blanks: the user picks from a fixed list, so only an
-         exact match (case-insensitive) counts — no fuzzy tolerance. */
-      if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
+    /* short-phrase resemblance (up to 3 words) */
+    var userWords = bObj.userAns.toLowerCase().split(/\s+/).filter(Boolean);
+    var ansWords  = bObj.ans.toLowerCase().split(/\s+/).filter(Boolean);
+    if (ansWords.length <= 3 && userWords.length <= 3) {
+      if (!_resembles(bObj.userAns, bObj.ans)) allOk = false;
     } else {
-      /* Text-input blanks: allow fuzzy resemblance for short phrases */
-      var userWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var ansWords  = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (ansWords.length <= 3 && userWords.length <= 3) {
-        if (!_resembles(compareUser, compareAns)) allOk = false;
-      } else {
-        if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
-      }
+      if (bObj.userAns.toLowerCase() !== bObj.ans.toLowerCase()) allOk = false;
     }
   });
   if (hasOpenBlanks) q._hasOpenBlanks = true;
@@ -434,27 +417,17 @@ function _feedbackCloze(q) {
       return;
     }
 
-    /* Determine correctness */
-    var isSelect = el.tagName === 'SELECT' || el.tagName_compat === 'SELECT';
-    var compareAns  = isSelect ? bObj.ans : _stripLatex(bObj.ans);
-    var compareUser = bObj.userAns;
+    /* short-phrase resemblance */
+    var uWords = bObj.userAns.toLowerCase().split(/\s+/).filter(Boolean);
+    var aWords = bObj.ans.toLowerCase().split(/\s+/).filter(Boolean);
     var ok;
-    if (isSelect) {
-      /* Select blanks: exact match only (user picks from a fixed list) */
-      ok = compareUser.toLowerCase() === compareAns.toLowerCase();
+    if (aWords.length <= 3 && uWords.length <= 3) {
+      ok = _resembles(bObj.userAns, bObj.ans);
     } else {
-      /* Text-input blanks: fuzzy resemblance for short phrases */
-      var uWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var aWords = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (aWords.length <= 3 && uWords.length <= 3) {
-        ok = _resembles(compareUser, compareAns);
-      } else {
-        ok = compareUser.toLowerCase() === compareAns.toLowerCase();
-      }
+      ok = bObj.userAns.toLowerCase() === bObj.ans.toLowerCase();
     }
     el.classList.remove('ok', 'no');
     el.classList.add(ok ? 'ok' : 'no');
-    applyBg(el, ok ? 'ok' : 'no');
   });
 }
 
@@ -1158,89 +1131,28 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
   var id = 'cloze-' + q.id + '-' + blankIdx;
 
   if (cfg.type === 'select' && cfg.options) {
-    /* Custom dropdown that supports LaTeX rendering in options */
-    var wrap = document.createElement('div');
-    wrap.className = 'q-cloze-input q-cloze-select-custom';
-    wrap.id = id;
-    wrap.tabIndex = 0;
-    if (cfg.w)  wrap.style.width = cfg.w + 'px';
-    if (cfg.fs) wrap.style.fontSize = cfg.fs + 'px';
-    if (cfg.fontFamily) wrap.style.fontFamily = cfg.fontFamily;
-    var _bo = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-    wrap.style.background  = 'rgba(255,255,255,' + _bo + ')';
-    wrap.dataset.bgOpacity = _bo;
+    var sel = document.createElement('select');
+    sel.className = 'q-cloze-input q-cloze-select';
+    sel.id = id;
+    if (cfg.w)  sel.style.width = cfg.w + 'px';
+    if (cfg.fs) sel.style.fontSize = cfg.fs + 'px';
+    if (cfg.fontFamily) sel.style.fontFamily = cfg.fontFamily;
 
-    /* hidden input stores selected raw value for grading */
-    var hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.name = id;
-    wrap.appendChild(hidden);
-
-    /* display area shows rendered LaTeX of selected option */
-    var display = document.createElement('span');
-    display.className = 'cloze-sel-display';
-    display.innerHTML = '\u2026';
-    wrap.appendChild(display);
-
-    /* dropdown arrow */
-    var arrow = document.createElement('span');
-    arrow.className = 'cloze-sel-arrow';
-    arrow.innerHTML = '&#9662;';
-    wrap.appendChild(arrow);
-
-    /* dropdown list */
-    var list = document.createElement('div');
-    list.className = 'cloze-sel-list';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '\u2026';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    sel.appendChild(placeholder);
 
     cfg.options.forEach(function (opt) {
-      var item = document.createElement('div');
-      item.className = 'cloze-sel-item';
-      item.dataset.value = opt;
-      item.innerHTML = renderText(opt);
-      item.addEventListener('click', function (e) {
-        e.stopPropagation();
-        hidden.value = opt;
-        display.innerHTML = renderText(opt);
-        wrap.dataset.value = opt;
-        list.classList.remove('open');
-        wrap.classList.add('has-value');
-        /* dispatch change event so external listeners work */
-        wrap.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-      list.appendChild(item);
-    });
-    wrap.appendChild(list);
-
-    /* toggle dropdown on click */
-    wrap.addEventListener('click', function (e) {
-      if (wrap.disabled || wrap.classList.contains('disabled')) return;
-      list.classList.toggle('open');
-    });
-    /* close on outside click */
-    document.addEventListener('click', function (e) {
-      if (!wrap.contains(e.target)) list.classList.remove('open');
+      var o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      sel.appendChild(o);
     });
 
-    /* expose .value getter/setter for compatibility with grading code */
-    Object.defineProperty(wrap, 'value', {
-      get: function () { return hidden.value; },
-      set: function (v) {
-        hidden.value = v;
-        display.innerHTML = renderText(v);
-        wrap.dataset.value = v;
-        wrap.classList.add('has-value');
-      }
-    });
-    Object.defineProperty(wrap, 'disabled', {
-      get: function () { return wrap.classList.contains('disabled'); },
-      set: function (v) {
-        if (v) { wrap.classList.add('disabled'); list.classList.remove('open'); }
-        else   { wrap.classList.remove('disabled'); }
-      }
-    });
-    wrap.tagName_compat = 'SELECT';
-
-    return wrap;
+    return sel;
   }
 
   /* open-ended textarea (when h is set or type is 'open') */
@@ -1252,9 +1164,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
     ta.style.height = (cfg.h || 60) + 'px';
     if (cfg.fs)         ta.style.fontSize   = cfg.fs + 'px';
     if (cfg.fontFamily) ta.style.fontFamily = cfg.fontFamily;
-    var _bo2 = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-    ta.style.background  = 'rgba(255,255,255,' + _bo2 + ')';
-    ta.dataset.bgOpacity = _bo2;
     ta.placeholder  = cfg.placeholder || 'Type your answer\u2026';
     ta.autocomplete = 'off';
     ta.spellcheck   = true;
@@ -1270,9 +1179,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
   inp.style.width = (cfg.w || 80) + 'px';
   if (cfg.fs)         inp.style.fontSize   = cfg.fs + 'px';
   if (cfg.fontFamily) inp.style.fontFamily = cfg.fontFamily;
-  var _bo3 = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-  inp.style.background  = 'rgba(255,255,255,' + _bo3 + ')';
-  inp.dataset.bgOpacity = _bo3;
   inp.placeholder  = '\u2026';
   inp.autocomplete = 'off';
   inp.spellcheck   = false;
@@ -1687,7 +1593,7 @@ function _lockGroup(g) {
       wrap.classList.remove('ok', 'no');
     } else if (q.type === 'cloze') {
       wrap.setAttribute('data-locked', '1');
-      wrap.querySelectorAll('.q-cloze-input').forEach(function (i) { i.disabled = true; applyBg(i, 'neutral'); });
+      wrap.querySelectorAll('.q-cloze-input').forEach(function (i) { i.disabled = true; });
       wrap.classList.remove('ok', 'no');
     } else if (q.type === 'combobox') {
       wrap.setAttribute('data-locked', '1');
@@ -1802,31 +1708,17 @@ function showAnswers(g) {
       var wrap = document.getElementById('w-' + q.id);
       /* remove any AI feedback displays that replaced textareas */
       wrap.querySelectorAll('.ai-feedback-display').forEach(function (fb) { fb.remove(); });
-      wrap.querySelectorAll('.q-cloze-rendered-ans').forEach(function (r) { r.remove(); });
       q._blanks.forEach(function (bObj, bi) {
         var el = document.getElementById('cloze-' + q.id + '-' + bi);
         if (!el) return;
         el.style.display = ''; /* restore if hidden by AI eval */
-        var isSelect = el.tagName === 'SELECT' || el.tagName_compat === 'SELECT';
-        el.value = bObj.ans;
-        if (isSelect) {
-          el.disabled = true;
+        if (el.tagName === 'SELECT') {
+          el.value = bObj.ans;
         } else {
-          /* If the answer contains LaTeX, overlay a rendered span */
-          if (/\$[^$]+\$/.test(bObj.ans)) {
-            var rendered = document.createElement('span');
-            rendered.className = 'q-cloze-rendered-ans ok';
-            rendered.innerHTML = renderText(bObj.ans);
-            rendered.style.width = el.style.width;
-            var _rbo = getBgOpacity(el);
-            rendered.style.background = 'rgba(255,255,255,' + _rbo + ')';
-            el.style.display = 'none';
-            el.parentNode.insertBefore(rendered, el.nextSibling);
-          }
+          el.value = bObj.ans;
           el.readOnly = true;
         }
         el.classList.remove('no', 'ai-pending'); el.classList.add('ok');
-        applyBg(el, 'neutral');
         el.disabled = true;
       });
       wrap.classList.remove('no'); wrap.classList.add('ok');

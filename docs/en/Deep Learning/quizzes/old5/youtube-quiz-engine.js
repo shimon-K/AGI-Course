@@ -355,19 +355,13 @@ function _checkCloze(q) {
     var compareAns = isSelect ? bObj.ans : _stripLatex(bObj.ans);
     var compareUser = isSelect ? bObj.userAns : bObj.userAns;
 
-    if (isSelect) {
-      /* Select blanks: the user picks from a fixed list, so only an
-         exact match (case-insensitive) counts — no fuzzy tolerance. */
-      if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
+    /* short-phrase resemblance (up to 3 words) */
+    var userWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
+    var ansWords  = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
+    if (ansWords.length <= 3 && userWords.length <= 3) {
+      if (!_resembles(compareUser, compareAns)) allOk = false;
     } else {
-      /* Text-input blanks: allow fuzzy resemblance for short phrases */
-      var userWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var ansWords  = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (ansWords.length <= 3 && userWords.length <= 3) {
-        if (!_resembles(compareUser, compareAns)) allOk = false;
-      } else {
-        if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
-      }
+      if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
     }
   });
   if (hasOpenBlanks) q._hasOpenBlanks = true;
@@ -434,27 +428,20 @@ function _feedbackCloze(q) {
       return;
     }
 
-    /* Determine correctness */
+    /* short-phrase resemblance */
     var isSelect = el.tagName === 'SELECT' || el.tagName_compat === 'SELECT';
     var compareAns  = isSelect ? bObj.ans : _stripLatex(bObj.ans);
     var compareUser = bObj.userAns;
+    var uWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
+    var aWords = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
     var ok;
-    if (isSelect) {
-      /* Select blanks: exact match only (user picks from a fixed list) */
-      ok = compareUser.toLowerCase() === compareAns.toLowerCase();
+    if (aWords.length <= 3 && uWords.length <= 3) {
+      ok = _resembles(compareUser, compareAns);
     } else {
-      /* Text-input blanks: fuzzy resemblance for short phrases */
-      var uWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var aWords = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (aWords.length <= 3 && uWords.length <= 3) {
-        ok = _resembles(compareUser, compareAns);
-      } else {
-        ok = compareUser.toLowerCase() === compareAns.toLowerCase();
-      }
+      ok = compareUser.toLowerCase() === compareAns.toLowerCase();
     }
     el.classList.remove('ok', 'no');
     el.classList.add(ok ? 'ok' : 'no');
-    applyBg(el, ok ? 'ok' : 'no');
   });
 }
 
@@ -1166,9 +1153,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
     if (cfg.w)  wrap.style.width = cfg.w + 'px';
     if (cfg.fs) wrap.style.fontSize = cfg.fs + 'px';
     if (cfg.fontFamily) wrap.style.fontFamily = cfg.fontFamily;
-    var _bo = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-    wrap.style.background  = 'rgba(255,255,255,' + _bo + ')';
-    wrap.dataset.bgOpacity = _bo;
 
     /* hidden input stores selected raw value for grading */
     var hidden = document.createElement('input');
@@ -1252,9 +1236,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
     ta.style.height = (cfg.h || 60) + 'px';
     if (cfg.fs)         ta.style.fontSize   = cfg.fs + 'px';
     if (cfg.fontFamily) ta.style.fontFamily = cfg.fontFamily;
-    var _bo2 = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-    ta.style.background  = 'rgba(255,255,255,' + _bo2 + ')';
-    ta.dataset.bgOpacity = _bo2;
     ta.placeholder  = cfg.placeholder || 'Type your answer\u2026';
     ta.autocomplete = 'off';
     ta.spellcheck   = true;
@@ -1270,9 +1251,6 @@ function _makeClozeInput(q, blankIdx, cfg, g) {
   inp.style.width = (cfg.w || 80) + 'px';
   if (cfg.fs)         inp.style.fontSize   = cfg.fs + 'px';
   if (cfg.fontFamily) inp.style.fontFamily = cfg.fontFamily;
-  var _bo3 = (typeof cfg.opacity === 'number') ? cfg.opacity : (typeof q.opacity === 'number') ? q.opacity : 1;
-  inp.style.background  = 'rgba(255,255,255,' + _bo3 + ')';
-  inp.dataset.bgOpacity = _bo3;
   inp.placeholder  = '\u2026';
   inp.autocomplete = 'off';
   inp.spellcheck   = false;
@@ -1687,7 +1665,7 @@ function _lockGroup(g) {
       wrap.classList.remove('ok', 'no');
     } else if (q.type === 'cloze') {
       wrap.setAttribute('data-locked', '1');
-      wrap.querySelectorAll('.q-cloze-input').forEach(function (i) { i.disabled = true; applyBg(i, 'neutral'); });
+      wrap.querySelectorAll('.q-cloze-input').forEach(function (i) { i.disabled = true; });
       wrap.classList.remove('ok', 'no');
     } else if (q.type === 'combobox') {
       wrap.setAttribute('data-locked', '1');
@@ -1818,15 +1796,12 @@ function showAnswers(g) {
             rendered.className = 'q-cloze-rendered-ans ok';
             rendered.innerHTML = renderText(bObj.ans);
             rendered.style.width = el.style.width;
-            var _rbo = getBgOpacity(el);
-            rendered.style.background = 'rgba(255,255,255,' + _rbo + ')';
             el.style.display = 'none';
             el.parentNode.insertBefore(rendered, el.nextSibling);
           }
           el.readOnly = true;
         }
         el.classList.remove('no', 'ai-pending'); el.classList.add('ok');
-        applyBg(el, 'neutral');
         el.disabled = true;
       });
       wrap.classList.remove('no'); wrap.classList.add('ok');

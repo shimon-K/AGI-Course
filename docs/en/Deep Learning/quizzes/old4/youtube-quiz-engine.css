@@ -813,15 +813,12 @@ html, body {
 
 .q-cloze-input {
   display: inline-block;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  border: 2px solid #000;
-  background: transparent;
-  color: #000;
+  border: none;
+  border-bottom: 2px solid #333;
+  background: rgba(0,0,0,0.04);
   font-family: inherit;
   font-size: inherit;
   text-align: center;
-  text-shadow: none !important;
   padding: 1px 4px;
   margin: 0 2px;
   outline: none;
@@ -829,114 +826,40 @@ html, body {
   transition: border-color 0.2s, background 0.2s;
   caret-color: #000;
 }
-.q-cloze-input:focus   { border-color: rgba(0,0,0,0.5); }
-.q-cloze-input.ok      { border-color: #27ae60; background: rgba(39,174,96,0.18); }
-.q-cloze-input.no      { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
+.q-cloze-input:focus   { border-color: #f39c12; background: rgba(243,156,18,0.06); }
+.q-cloze-input.ok      { border-color: #27ae60; background: rgba(39,174,96,0.12); }
+.q-cloze-input.no      { border-color: #e74c3c; background: rgba(231,76,60,0.10); }
 .q-cloze-input::placeholder { color: rgba(0,0,0,0.25); }
 .q-cloze-input[readonly],
-.q-cloze-input[disabled] { opacity: 0.6; cursor: default; }
+.q-cloze-input[disabled] { opacity: 0.7; cursor: default; }
 
-/* Cloze dropdown (native select) */
+/* Cloze dropdown (select) */
 .q-cloze-select {
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  border: 2px solid #000;
-  background: transparent;
-  color: #000;
+  border: none;
+  border-bottom: 2px solid #333;
+  background: rgba(0,0,0,0.04);
   font-family: inherit;
   font-size: inherit;
   text-align: center;
-  text-shadow: none !important;
   padding: 1px 4px;
   margin: 0 2px;
   outline: none;
   vertical-align: baseline;
   cursor: pointer;
   appearance: auto;
-  transition: border-color 0.2s, background 0.2s;
 }
-.q-cloze-select:focus { border-color: rgba(0,0,0,0.5); }
-.q-cloze-select.ok   { border-color: #27ae60; background: rgba(39,174,96,0.18); }
-.q-cloze-select.no   { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
-
-/* Custom cloze select (LaTeX-capable dropdown) — layout overrides only */
-.q-cloze-select-custom {
-  position: relative;
-  padding: 2px 20px 2px 6px;
-  cursor: pointer;
-  min-width: 60px;
-  user-select: none;
-}
-.q-cloze-select-custom.disabled { opacity: 0.6; cursor: default; pointer-events: none; }
-
-.cloze-sel-display { pointer-events: none; }
-.cloze-sel-display .katex { font-size: 1em; }
-
-.cloze-sel-arrow {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.7em;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.cloze-sel-list {
-  display: none;
-  position: absolute;
-  left: 0;
-  top: calc(100% + 3px);
-  min-width: 100%;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 1000;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.cloze-sel-list.open { display: block; }
-
-.cloze-sel-item {
-  padding: 6px 10px;
-  cursor: pointer;
-  white-space: nowrap;
-  text-align: left;
-}
-.cloze-sel-item:hover { background: rgba(243,156,18,0.12); }
-.cloze-sel-item .katex { font-size: 1em; }
-
-/* Rendered LaTeX answer (shown on reveal) */
-.q-cloze-rendered-ans {
-  display: inline-block;
-  border: 2px solid #27ae60;
-  background: rgba(39,174,96,0.18);
-  color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
-  padding: 1px 4px;
-  margin: 0 2px;
-  vertical-align: baseline;
-  font-family: inherit;
-  font-size: inherit;
-  opacity: 0.6;
-}
-.q-cloze-rendered-ans .katex { font-size: 1em; }
+.q-cloze-select:focus { border-color: #f39c12; }
+.q-cloze-select.ok   { border-color: #27ae60; background: rgba(39,174,96,0.12); }
+.q-cloze-select.no   { border-color: #e74c3c; background: rgba(231,76,60,0.10); }
 
 /* Cloze open-ended textarea */
 .q-cloze-textarea {
   display: block;
   width: 100%;
   resize: vertical;
-  border: 2px solid #000;
-  border-radius: 0;
-  background: transparent;
-  color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
+  border: 2px solid #444;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.95);
   font-family: 'Calibri', 'Carlito', sans-serif;
   font-size: inherit;
   text-align: left;
@@ -945,31 +868,27 @@ html, body {
   outline: none;
   line-height: 1.5;
   caret-color: #000;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
-.q-cloze-textarea:focus { border-color: rgba(0,0,0,0.5); }
-.q-cloze-textarea.ok    { border-color: #27ae60; background: rgba(39,174,96,0.18); }
-.q-cloze-textarea.no    { border-color: #e74c3c; background: rgba(231,76,60,0.15); }
+.q-cloze-textarea:focus { border-color: #f39c12; box-shadow: 0 0 0 2px rgba(243,156,18,0.15); }
+.q-cloze-textarea.ok    { border-color: #27ae60; background: rgba(39,174,96,0.08); }
+.q-cloze-textarea.no    { border-color: #e74c3c; background: rgba(231,76,60,0.08); }
 .q-cloze-textarea.ai-pending {
-  border-color: rgba(0,0,0,0.5);
-  background: transparent;
+  border-color: #f39c12;
+  background: rgba(243,156,18,0.06);
   animation: ai-pulse 1.2s ease-in-out infinite;
 }
 @keyframes ai-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
-  50%      { box-shadow: 0 0 0 4px rgba(0,0,0,0.15); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(243,156,18,0.15); }
+  50%      { box-shadow: 0 0 0 4px rgba(243,156,18,0.3); }
 }
 
 /* AI feedback display (replaces textarea after evaluation) */
 .ai-feedback-display {
   display: block;
-  border: 2px solid #000;
-  border-radius: 0;
-  background: transparent;
-  color: #000;
-  -webkit-text-fill-color: #000;
-  color-scheme: light;
-  text-shadow: none !important;
+  border: 2px solid #666;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.97);
   padding: 6px 8px;
   margin: 4px 0;
   font-family: 'Calibri', 'Carlito', sans-serif;

@@ -355,19 +355,13 @@ function _checkCloze(q) {
     var compareAns = isSelect ? bObj.ans : _stripLatex(bObj.ans);
     var compareUser = isSelect ? bObj.userAns : bObj.userAns;
 
-    if (isSelect) {
-      /* Select blanks: the user picks from a fixed list, so only an
-         exact match (case-insensitive) counts — no fuzzy tolerance. */
-      if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
+    /* short-phrase resemblance (up to 3 words) */
+    var userWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
+    var ansWords  = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
+    if (ansWords.length <= 3 && userWords.length <= 3) {
+      if (!_resembles(compareUser, compareAns)) allOk = false;
     } else {
-      /* Text-input blanks: allow fuzzy resemblance for short phrases */
-      var userWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var ansWords  = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (ansWords.length <= 3 && userWords.length <= 3) {
-        if (!_resembles(compareUser, compareAns)) allOk = false;
-      } else {
-        if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
-      }
+      if (compareUser.toLowerCase() !== compareAns.toLowerCase()) allOk = false;
     }
   });
   if (hasOpenBlanks) q._hasOpenBlanks = true;
@@ -434,23 +428,17 @@ function _feedbackCloze(q) {
       return;
     }
 
-    /* Determine correctness */
+    /* short-phrase resemblance */
     var isSelect = el.tagName === 'SELECT' || el.tagName_compat === 'SELECT';
     var compareAns  = isSelect ? bObj.ans : _stripLatex(bObj.ans);
     var compareUser = bObj.userAns;
+    var uWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
+    var aWords = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
     var ok;
-    if (isSelect) {
-      /* Select blanks: exact match only (user picks from a fixed list) */
-      ok = compareUser.toLowerCase() === compareAns.toLowerCase();
+    if (aWords.length <= 3 && uWords.length <= 3) {
+      ok = _resembles(compareUser, compareAns);
     } else {
-      /* Text-input blanks: fuzzy resemblance for short phrases */
-      var uWords = compareUser.toLowerCase().split(/\s+/).filter(Boolean);
-      var aWords = compareAns.toLowerCase().split(/\s+/).filter(Boolean);
-      if (aWords.length <= 3 && uWords.length <= 3) {
-        ok = _resembles(compareUser, compareAns);
-      } else {
-        ok = compareUser.toLowerCase() === compareAns.toLowerCase();
-      }
+      ok = compareUser.toLowerCase() === compareAns.toLowerCase();
     }
     el.classList.remove('ok', 'no');
     el.classList.add(ok ? 'ok' : 'no');

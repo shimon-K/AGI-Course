@@ -117,7 +117,7 @@ var GROUPS = [
         x: 55, y: 75.5, w: 55,
         fs: 16,
         //opacity: 0.05,
-        template: '$\\frac{ {{0}} }{ {{1}} }$  \\qquad   {{2}}',
+        template: '$\\frac{ {{0}} }{ {{1}} }\\qquad$ {{2}}',
         blanks: [
           { ans: '0.08',  w: 78 },
           { ans: '0.2',   w: 78 },
@@ -131,7 +131,7 @@ var GROUPS = [
         x: 62, y: 84.5, w: 46,
         fs: 16,
         //opacity: 0.05,
-        template: '$\\frac{ {{0}} }{ {{1}} }$  \\qquad {{2}}',
+        template: '$\\frac{ {{0}} }{ {{1}} }\\qquad$ {{2}}',
         blanks: [
           { ans: '0.192',  w: 72 },
           { ans: '0.416',  w: 72 },
@@ -171,84 +171,44 @@ var GROUPS = [
 
       /* ── Q1: Marginal p(x) — 5 values ── */
       {
-        type: 'cloze',
-        x: 31, y: 72, w: 33,
-        fs: 12,
-        opacity: 0.85,
-        lineSpacing: 1.7,
-        template: '( {{0}}, {{1}}, {{2}}, {{3}}, {{4}} )',
-        blanks: [
-          { ans: '0.16', w: 38 },
-          { ans: '0.17', w: 38 },
-          { ans: '0.11', w: 38 },
-          { ans: '0.22', w: 38 },
-          { ans: '0.34', w: 38 }
+        type: 'cloze', x: 48, y: 77, w: 94,
+        parts: [
+          { blank: true, ans: '$\\sum_{x}p(x,y)$', w: 80, type: 'select',
+            options: ['$\\sum_{x}p(x,y)$', '$\\sum_{y}p(x,y)$', '$\\sum_{x}p(y|x)$', '$\\sum_{y}p(x|y)$'] },
+          '$\\qquad\\qquad\\quad$',
+          { blank: true, ans: '$\\sum_{y}p(x,y)$', w: 80, type: 'select',
+            options: ['$\\sum_{x}p(x,y)$', '$\\sum_{y}p(x,y)$', '$\\sum_{x}p(y|x)$', '$\\sum_{y}p(x|y)$'] },
         ]
       },
-
-      /* ── Q2: Marginal p(y) — 3 values ── */
       {
-        type: 'cloze',
-        x: 72, y: 72, w: 25,
-        fs: 12,
-        opacity: 0.85,
-        lineSpacing: 1.7,
-        template: '( {{0}}, {{1}}, {{2}} )',
-        blanks: [
-          { ans: '0.26', w: 38 },
-          { ans: '0.47', w: 38 },
-          { ans: '0.27', w: 38 }
-        ]
+        x: 59, y: 84.6,
+        w: 70, fs: 14,
+        ans: '0.26', tol: 0.005,
+        opacity: 0.85
       },
-
-      /* ── Q3: Conditional p(x | Y = y1) — 5 values ── */
       {
-        type: 'cloze',
-        x: 38, y: 81, w: 56,
-        fs: 12,
-        opacity: 0.85,
-        lineSpacing: 1.7,
-        template: '( {{0}}, {{1}}, {{2}}, {{3}}, {{4}} )',
-        blanks: [
-          { ans: '1/26',  w: 44 },
-          { ans: '2/26',  w: 44 },
-          { ans: '3/26',  w: 44 },
-          { ans: '10/26', w: 44 },
-          { ans: '10/26', w: 44 }
-        ]
+        x: 59, y: 89.7,
+        w: 70, fs: 14,
+        ans: '0.11', tol: 0.005,
+        opacity: 0.85
       },
-
-      /* ── Q4: Conditional p(y | X = x3) — 3 values ── */
-      {
-        type: 'cloze',
-        x: 38, y: 89, w: 40,
-        fs: 12,
-        opacity: 0.85,
-        lineSpacing: 1.7,
-        template: '( {{0}}, {{1}}, {{2}} )',
-        blanks: [
-          { ans: '3/11', w: 44 },
-          { ans: '5/11', w: 44 },
-          { ans: '3/11', w: 44 }
-        ]
-      }
     ],
 
     /* Explanation bubbles */
     bubbles: [
       {
-        x: 2, y: 3, w: 40,
-        style: 'bubble', tail: 'bottom', tailOffset: 50,
+        x: 80, y: 73, w: 10,
+        style: 'bubble', tail: 'left', tailOffset: 50,
         bg: 'rgba(230,255,230,0.96)', borderColor: '#4a9950',
         fs: 10, padding: 8,
-        text: 'Marginals: sum each column for p(x), sum each row for p(y).\np(x₁)=0.16  p(x₂)=0.17  p(x₃)=0.11  p(x₄)=0.22  p(x₅)=0.34\np(y₁)=0.26  p(y₂)=0.47  p(y₃)=0.27'
+        text: 'By definition.'
       },
       {
-        x: 50, y: 3, w: 46,
-        style: 'bubble', tail: 'bottom-left', tailOffset: 30,
+        x: 17, y: 88, w: 23,
+        style: 'bubble', tail: 'right', tailOffset: 30,
         bg: 'rgba(240,230,255,0.96)', borderColor: '#7a5db5',
         fs: 10, padding: 8,
-        text: 'Conditionals:\np(xᵢ|Y=y₁) = p(xᵢ,y₁)/p(y₁)  →  divide y₁ row by 0.26\np(yⱼ|X=x₃) = p(x₃,yⱼ)/p(x₃)  →  divide x₃ column by 0.11'
+        text: 'p(x|Y=y1)=0.01+0.02+0.03+0.1+0.1=0.26\\np(y|X=x₃) = 0.03+0.05+0.03 = 0.11'
       }
     ]
   }
