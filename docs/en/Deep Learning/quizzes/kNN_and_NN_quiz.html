@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Machine Learning — k-NN & Neural Networks Quiz</title>
+
+<!-- KaTeX for math rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+<!-- Quiz engine stylesheet -->
+<link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+  <div id="header">Lecture 3 &mdash; k-NN &amp; Neural Networks</div>
+
+  <div id="quiz-frame">
+    <div id="video-wrap">
+      <iframe id="yt-player"
+              allow="autoplay; encrypted-media"
+              allowfullscreen></iframe>
+      <div id="overlay-layer"></div>
+      <div id="pause-notice">Paused &mdash; answer the question below</div>
+    </div>
+  </div>
+
+<script>
+/* ───────────────────────────────────────────────────────────────
+   Quiz configuration — based on "Lec3: k-NN & Neural Networks"
+   ─────────────────────────────────────────────────────────────── */
+
+/* No YouTube video — use the blank canvas background mode */
+var VIDEO_ID = '';
+var BACKGROUND = {
+  enabled : true,
+  color   : 'linear-gradient(135deg, #1a2a4a 0%, #2c3e7a 50%, #1a2a4a 100%)',
+  autoPlay: false
+  /* duration auto-calculated from last group time + POST_QUIZ_DURATION */
+};
+
+var DEFAULT_TIME_GAP   = 4;   /* seconds between auto-timed groups   */
+var POST_QUIZ_DURATION = 12;  /* seconds after last group → summary  */
+
+var MOODLE = { enabled: false };
+
+/* Common style helpers reused across groups */
+var BUBBLE_DEFAULTS = {
+  style       : 'bubble',
+  tail        : 'top',
+  bg          : 'rgba(255,248,200,0.97)',
+  borderColor : '#d4a017',
+  color       : '#3a2e00',
+  fs          : 12,
+  padding     : 10,
+  borderRadius: 10
+};
+
+function mkBubble(text, x, y, w, opts) {
+  var b = {
+    x: x, y: y, w: w, text: text
+  };
+  for (var k in BUBBLE_DEFAULTS) b[k] = BUBBLE_DEFAULTS[k];
+  if (opts) for (var k2 in opts) b[k2] = opts[k2];
+  return b;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   25 questions, easy → hard, varied types
+   Each group: maxTries = 3, one explanation bubble.
+   ─────────────────────────────────────────────────────────────── */
+var GROUPS = [
+
+  /* ─── Q1: easy radio ─────────────────────────────────────── */
+  {
+    label: 'Q1 — k-NN Basics', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 14, color: '#fff', opacity: 0,
+        text: '<b>What kinds of tasks can the k-NN algorithm be used for?</b>' },
+      { type: 'radio', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'Only classification tasks',
+          'Only regression tasks',
+          'Both classification and regression tasks',
+          'Only clustering tasks'
+        ],
+        ans: 2 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: Both classification and regression.</b><br>' +
+      'k-NN is a versatile non-parametric method. For <i>classification</i> it uses majority vote of the k nearest neighbors; for <i>regression</i> it returns a (weighted) average of their values.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q2: easy radio ─────────────────────────────────────── */
+  {
+    label: 'Q2 — Classification Rule', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 14, color: '#fff', opacity: 0,
+        text: '<b>In k-NN classification, how is the label of a new point chosen?</b>' },
+      { type: 'radio', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'By computing the centroid of all training points',
+          'By picking the label of the majority of the k nearest neighbors',
+          'By solving a system of linear equations',
+          'By minimizing a cross-entropy loss'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: Majority vote of the k nearest neighbors.</b><br>' +
+      'The slide states: "pick the label of the majority of k-nearest neighbors". No model is fitted — the prediction is made directly from the training set at query time.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q3: cloze — Euclidean formula ──────────────────────── */
+  {
+    label: 'Q3 — Euclidean Distance', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 14, color: '#fff', opacity: 0,
+        text: '<b>Complete the Euclidean distance formula used in k-NN:</b>' },
+      { type: 'cloze', x: 6, y: 22, w: 88, fs: 18, lineSpacing: 1.8,
+        template: '$$d(A,B) = \\sqrt{({{0}} - x_B)^2 + (y_A - {{1}})^2}$$',
+        blanks: [
+          { ans: '$x_A$', w: 50, fs: 16, type: 'select',
+            options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] },
+          { ans: '$y_B$', w: 50, fs: 16, type: 'select',
+            options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] }
+        ] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> $d(A,B)=\\sqrt{(x_A-x_B)^2+(y_A-y_B)^2}$.<br>' +
+      'Euclidean distance is the straight-line distance between two points in feature space. It is the most common metric for k-NN, though other metrics (Manhattan, cosine, Minkowski) are also possible.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q4: text input — compute one distance ─────────────── */
+  {
+    label: 'Q4 — Distance Calculation', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 14, color: '#fff', opacity: 0,
+        text: '<b>Compute the Euclidean distance from (2,1) to (3,2).<br>' +
+              'Give your answer to <u>3 decimal places</u>.</b>' },
+      { type: 'label', x: 6, y: 28, fs: 13, color: '#ddd', opacity: 0,
+        text: 'Distance =' },
+      { x: 22, y: 27, w: 110, fs: 14, ans: '1.414', tol: 0.01 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: $\\sqrt{2}\\approx 1.414$.</b><br>' +
+      '$d=\\sqrt{(2-3)^2+(1-2)^2}=\\sqrt{1+1}=\\sqrt{2}\\approx 1.414$. (3,2) has two equidistant neighbours: (2,1) and (4,3), both at $\\sqrt{2}$.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q5: checkbox — pick the 3 NN ───────────────────────── */
+  {
+    label: 'Q5 — Three Nearest Neighbours', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>For the query point (3,2) with $k=3$, which training points are the 3 nearest neighbours?</b><br>(Select all that apply.)' },
+      { type: 'checkbox', x: 6, y: 22, w: 88, fs: 13,
+        choices: [
+          '(1,1) — Red',
+          '(2,1) — Red',
+          '(4,3) — Blue',
+          '(6,2) — Blue'
+        ],
+        ans: [0, 1, 2] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: (1,1), (2,1) and (4,3).</b><br>' +
+      'Distances to (3,2): &nbsp;(1,1)→2.236, &nbsp;(2,1)→1.414, &nbsp;(4,3)→1.414, &nbsp;(6,2)→3.0. The three smallest distances are 1.414, 1.414 and 2.236, so (6,2) is excluded.',
+      6, 65, 88
+    )
+  },
+
+  /* ─── Q6: radio — predicted class ────────────────────────── */
+  {
+    label: 'Q6 — Majority Vote', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Using the 3 nearest neighbours {(1,1) Red, (2,1) Red, (4,3) Blue}, what is the predicted class of (3,2)?</b>' },
+      { type: 'radio', x: 6, y: 22, w: 88, fs: 13,
+        choices: [ 'Red', 'Blue', 'Cannot be determined — there is a tie', 'Green' ],
+        ans: 0 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: Red.</b><br>' +
+      'Red gets 2 votes ((1,1) and (2,1)); Blue gets 1 vote ((4,3)). Majority wins, so the predicted label is <span style="color:#c0392b;font-weight:bold;">Red</span>.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q7: slider — regression value ─────────────────────── */
+  {
+    label: 'Q7 — k-NN Regression', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>In the regression example, neighbours of (3,2) carry values 12, 9, 6. ' +
+              'Using inverse-distance weights, the predicted value is approximately…</b>' },
+      { type: 'slider', x: 6, y: 26, w: 88,
+        min: 6, max: 14, step: 0.1, ans: 8.6, tol: 0.2, unit: '',
+        fs: 13 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: ≈ 8.576.</b><br>' +
+      'Weights $d_i=1/\\text{dist}_i$: 0.447, 0.707, 0.707. Sum = 1.862.<br>' +
+      '$\\hat h = (0.447\\cdot 12 + 0.707\\cdot 9 + 0.707\\cdot 6)/1.862 \\approx 8.576$.<br>' +
+      'Closer neighbours have larger weights.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q8: ordering — k-NN algorithm steps ─────────────────── */
+  {
+    label: 'Q8 — k-NN Algorithm Steps', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Drag the steps of the k-NN classification algorithm into the correct order:</b>' },
+      { type: 'ordering', x: 6, y: 20, w: 88, fs: 13,
+        items: [
+          'Compute distance from the query point to every training point',
+          'Select the k training points with the smallest distances',
+          'Take the majority vote of the labels of those k points',
+          'Output the predicted label for the query point'
+        ],
+        ans: [0, 1, 2, 3] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> (1) compute distances → (2) pick the k smallest → (3) majority vote → (4) output prediction.<br>' +
+      'k-NN has <i>no training phase</i>; all of the work happens at query time, which is why it is called a <i>lazy learner</i>.',
+      6, 64, 88
+    )
+  },
+
+  /* ─── Q9: radio — effect of k ────────────────────────────── */
+  {
+    label: 'Q9 — Choosing k', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>What typically happens to the decision boundary as $k$ increases?</b>' },
+      { type: 'radio', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'It becomes more jagged and overfits more',
+          'It becomes smoother; with very large $k$ it under-fits',
+          'It stays exactly the same',
+          'It always improves test accuracy'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: smoother — large $k$ → under-fitting.</b><br>' +
+      'Low $k$ (e.g. $k=1$) fits the training data perfectly but is noisy and over-fits. Very high $k$ averages over far-away (irrelevant) points and under-fits the decision boundary.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q10: match — k-NN pros & cons ──────────────────────── */
+  {
+    label: 'Q10 — k-NN Pros & Cons', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Match each k-NN property with the correct category:</b>' },
+      { type: 'match', x: 6, y: 20, w: 740,
+        fs: 13, dotSize: 14, dotGap: 14, colGap: 80,
+        left: [
+          'No training phase',
+          'Slow at prediction time',
+          'Suffers from the curse of dimensionality',
+          'Highly intuitive and easy to implement',
+          'Sensitive to feature scale'
+        ],
+        right: [ '<b>Advantage (Pro)</b>', '<b>Disadvantage (Con)</b>' ],
+        ans: [0, 1, 1, 0, 1] }
+    ],
+    bubble: mkBubble(
+      '<b>Answers:</b> No training & intuitive → <b>Pros</b>. ' +
+      'Slow prediction, curse of dimensionality, scale sensitivity → <b>Cons</b>.<br>' +
+      'Because k-NN stores all data and computes distances at query time, it is fast to "train" but slow to predict and degrades when feature dimension grows or scales differ.',
+      6, 78, 88
+    )
+  },
+
+  /* ─── Q11: radio — shallow NN with sigmoid ───────────────── */
+  {
+    label: 'Q11 — Shallow NN', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>A shallow neural network with a single output neuron and a <i>sigmoid</i> activation is equivalent to which classical model?</b>' },
+      { type: 'radio', x: 6, y: 20, w: 88, fs: 13,
+        choices: [
+          'Linear regression',
+          'Logistic regression',
+          'k-NN classifier',
+          'Decision tree'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: Logistic regression.</b><br>' +
+      'A shallow NN computes $\\hat y = \\sigma(\\omega^\\top x)$. Without the sigmoid it is <i>linear regression</i>; with the sigmoid it is <i>logistic regression</i>. Deep networks generalize this by stacking layers.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q12: match — activation function to formula ────────── */
+  {
+    label: 'Q12 — Activation Functions', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Match each activation function to its formula:</b>' },
+      { type: 'match', x: 6, y: 18, w: 740,
+        fs: 13, dotSize: 14, dotGap: 14, colGap: 80,
+        left: [
+          'Identity',
+          'Logistic (sigmoid)',
+          'TanH',
+          'ReLU',
+          'SoftPlus'
+        ],
+        right: [
+          '$f(x)=x$',
+          '$f(x)=\\dfrac{1}{1+e^{-x}}$',
+          '$f(x)=\\dfrac{2}{1+e^{-2x}}-1$',
+          '$f(x)=\\max(0,x)$',
+          '$f(x)=\\log_e(1+e^x)$'
+        ],
+        ans: [0, 1, 2, 3, 4] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> Identity→$x$, Sigmoid→$1/(1+e^{-x})$, TanH→$2/(1+e^{-2x})-1$, ReLU→$\\max(0,x)$, SoftPlus→$\\log(1+e^x)$.<br>' +
+      'Non-linear activations (sigmoid, TanH, ReLU, …) are what let deep networks model non-linear relationships.',
+      6, 75, 88
+    )
+  },
+
+  /* ─── Q13: radio — loss for regression ────────────────────── */
+  {
+    label: 'Q13 — Loss Functions', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Which loss is typically used for a <i>regression</i> NN?</b>' },
+      { type: 'radio', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'Binary cross-entropy: $-\\big(y\\log\\hat y + (1-y)\\log(1-\\hat y)\\big)$',
+          'Mean Squared Error: $\\|\\hat y - y\\|^2$',
+          'Hinge loss: $\\max(0,\\,1-y\\hat y)$',
+          'Negative log-likelihood with softmax'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: Mean Squared Error.</b><br>' +
+      'For regression we measure $\\|\\hat y - y\\|^2$ (or $\\tfrac{1}{n}\\sum(\\hat y_i-y_i)^2$). For binary classification we use binary cross-entropy. The slide shows both forms side by side.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q14: cloze — weight update rule ─────────────────────── */
+  {
+    label: 'Q14 — Gradient Descent Step', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 14, color: '#fff', opacity: 0,
+        text: '<b>Complete the weight-update rule used in gradient descent:</b>' },
+      { type: 'cloze', x: 6, y: 24, w: 88, fs: 18, lineSpacing: 2.0,
+        template: '$$\\omega \\leftarrow \\omega - {{0}} \\cdot \\dfrac{\\partial {{1}}}{\\partial \\omega}$$',
+        blanks: [
+          { ans: '$\\eta$', w: 50, fs: 16, type: 'select',
+            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat y$'] },
+          { ans: '$L$', w: 50, fs: 16, type: 'select',
+            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat y$'] }
+        ] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> $\\omega \\leftarrow \\omega - \\eta\\,\\dfrac{\\partial L}{\\partial \\omega}$.<br>' +
+      '$\\eta$ is the <i>learning rate</i> (step size) and $\\partial L/\\partial\\omega$ is the gradient of the loss with respect to the weight. The minus sign moves us downhill on the loss surface.',
+      6, 62, 88
+    )
+  },
+
+  /* ─── Q15: radio — what is η ────────────────────────────── */
+  {
+    label: 'Q15 — Learning Rate', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 5, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>In $\\omega \\leftarrow \\omega - \\eta\\,\\partial L/\\partial \\omega$, what does $\\eta$ represent?</b>' },
+      { type: 'radio', x: 6, y: 20, w: 88, fs: 13,
+        choices: [
+          'The loss value',
+          'The activation of the neuron',
+          'The learning rate (step size)',
+          'The number of training samples'
+        ],
+        ans: 2 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: the learning rate.</b><br>' +
+      'Too large → training diverges or oscillates; too small → training is very slow and may get stuck. $\\eta$ is one of the most important hyper-parameters of NN training.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q16: ordering — backpropagation steps ──────────────── */
+  {
+    label: 'Q16 — Backpropagation', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Drag the four steps inside one back-propagation iteration into the correct order:</b>' },
+      { type: 'ordering', x: 6, y: 18, w: 88, fs: 13,
+        items: [
+          'Forward pass: compute all intermediate neurons & the prediction',
+          'Compute the loss between prediction and true output',
+          'Backward pass: compute the gradients of the loss w.r.t. every weight',
+          'Update step: $\\omega \\leftarrow \\omega - \\eta\\,\\partial L/\\partial\\omega$'
+        ],
+        ans: [0, 1, 2, 3] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> Forward → Loss → Backward → Update.<br>' +
+      'This four-step cycle is repeated for every mini-batch. One full pass over the dataset is called an <i>epoch</i>; training runs for many epochs.',
+      6, 65, 88
+    )
+  },
+
+  /* ─── Q17: combobox — chain rule term ────────────────────── */
+  {
+    label: 'Q17 — Chain Rule', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>For a sigmoid output neuron $\\hat y = \\sigma(z)$ with $z=\\omega^\\top x$, the chain-rule expression for $\\partial L/\\partial\\omega$ equals:</b>' },
+      { type: 'combobox', x: 6, y: 24, w: 88, fs: 13,
+        options: [
+          'dL/dy * dy/dz * dz/dw',
+          'dL/dw * dw/dy * dy/dz',
+          'dz/dw * dw/dy * dL/dy',
+          'dL/dy + dy/dz + dz/dw'
+        ],
+        ans: 'dL/dy * dy/dz * dz/dw' }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> $\\dfrac{\\partial L}{\\partial \\omega} = \\dfrac{\\partial L}{\\partial \\hat y}\\cdot\\dfrac{\\partial \\hat y}{\\partial z}\\cdot\\dfrac{\\partial z}{\\partial \\omega}$.<br>' +
+      'For the binary-cross-entropy + sigmoid case this simplifies neatly to $(\\hat y - y)\\,x$, which is why logistic regression has such a clean update rule.',
+      6, 65, 88
+    )
+  },
+
+  /* ─── Q18: radio — deeper NN dimensions ──────────────────── */
+  {
+    label: 'Q18 — Deep NN Dimensions', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>A hidden layer maps $n$ inputs (plus a bias) to $m$ outputs. ' +
+              'What are the dimensions of the weight matrix $\\Omega$ used in the equation ' +
+              '$o = \\Omega\\cdot x$?</b>' },
+      { type: 'radio', x: 6, y: 23, w: 88, fs: 13,
+        choices: [
+          '$\\Omega$ is $n \\times m$',
+          '$\\Omega$ is $m \\times (n+1)$',
+          '$\\Omega$ is $1 \\times 1$',
+          '$\\Omega$ is $(n+1) \\times (m+1)$'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> $\\Omega$ is $m \\times (n+1)$ — one row per output neuron, one column per input (plus 1 for the bias). The input vector is augmented with a leading 1, giving size $(n+1)\\times 1$, and $\\Omega x$ has size $m\\times 1$ as required.',
+      6, 64, 88
+    )
+  },
+
+  /* ─── Q19: radio — overfitting symptom ───────────────────── */
+  {
+    label: 'Q19 — Detecting Over-fitting', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Looking at training/validation loss vs. epochs, what is the typical sign of over-fitting?</b>' },
+      { type: 'radio', x: 6, y: 20, w: 88, fs: 13,
+        choices: [
+          'Both training and validation loss keep decreasing',
+          'Training loss keeps decreasing while validation loss starts to <i>increase</i>',
+          'Training loss increases sharply',
+          'Validation loss is exactly equal to the training loss'
+        ],
+        ans: 1 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> Training loss ↓ but validation loss ↑.<br>' +
+      'The point where validation loss starts going back up is where the model begins memorising noise instead of generalising. This is the cue for <b>early stopping</b>.',
+      6, 62, 88
+    )
+  },
+
+  /* ─── Q20: checkbox — overfitting remedies ───────────────── */
+  {
+    label: 'Q20 — Remedies for Over-fitting', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Select <u>all</u> techniques shown/implied in the lecture for combating under- or over-fitting:</b>' },
+      { type: 'checkbox', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'Use a validation split to monitor generalisation',
+          'Early stopping at the minimum of the validation curve',
+          'Increase the learning rate to infinity',
+          'k-fold cross validation to estimate generalisation error',
+          'Remove every regularization mechanism'
+        ],
+        ans: [0, 1, 3] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer:</b> validation split, early stopping, k-fold CV.<br>' +
+      'Making $\\eta\\!\\to\\!\\infty$ or removing all regularization makes the model <i>worse</i>. Other unmentioned but standard remedies include dropout, weight decay, and data augmentation.',
+      6, 66, 88
+    )
+  },
+
+  /* ─── Q21: radio — bias/variance ─────────────────────────── */
+  {
+    label: 'Q21 — Bias-Variance Trade-off', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>A simple linear model fit to clearly non-linear data is best described as:</b>' },
+      { type: 'radio', x: 6, y: 18, w: 88, fs: 13,
+        choices: [
+          'High bias, low variance (under-fitting)',
+          'Low bias, high variance (over-fitting)',
+          'Low bias, low variance (the ideal model)',
+          'High bias, high variance (impossible case)'
+        ],
+        ans: 0 }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: high bias, low variance — under-fitting.</b><br>' +
+      'A model that is too simple for the data has large <i>bias</i> (systematic error) but is stable across training samples (<i>low variance</i>). A very flexible model is the opposite: low bias, high variance — over-fitting.',
+      6, 60, 88
+    )
+  },
+
+  /* ─── Q22: match — model → key characteristic ────────────── */
+  {
+    label: 'Q22 — Comparing ML Models', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Match each model to its key characteristic from the comparison table:</b>' },
+      { type: 'match', x: 6, y: 18, w: 740,
+        fs: 13, dotSize: 14, dotGap: 16, colGap: 80,
+        left: [
+          'k-NN',
+          'Logistic Regression',
+          'SVM',
+          'Random Forest',
+          'Neural Network'
+        ],
+        right: [
+          'Non-parametric, no training phase',
+          'Fast & interpretable, assumes linearity',
+          'Effective in high-dimensional spaces with kernels',
+          'Ensemble of trees, reduces over-fitting',
+          'Handles complex non-linear data, not interpretable'
+        ],
+        ans: [0, 1, 2, 3, 4] }
+    ],
+    bubble: mkBubble(
+      'Each model has its sweet spot. k-NN and decision trees are simple baselines; SVM excels with the right kernel; ensembles like Random Forest and Gradient Boosting often top tabular benchmarks; Neural Networks dominate on unstructured high-dimensional data (images, audio, text).',
+      6, 78, 88
+    )
+  },
+
+  /* ─── Q23: ordering — NN history ─────────────────────────── */
+  {
+    label: 'Q23 — History of NNs', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Place the following milestones of neural-network history in chronological order:</b>' },
+      { type: 'ordering', x: 6, y: 18, w: 88, fs: 13,
+        items: [
+          'McCulloch &amp; Pitts — first artificial neuron (1943)',
+          'Rosenblatt — Perceptron (1960)',
+          'Minsky &amp; Papert — limits of Perceptrons (1969)',
+          'Boltzmann Machine (1985)',
+          'Hinton — Deep Belief Networks (2006)'
+        ],
+        ans: [0, 1, 2, 3, 4] }
+    ],
+    bubble: mkBubble(
+      '<b>Chronology:</b> 1943 → 1960 → 1969 → 1985 → 2006.<br>' +
+      'Minsky &amp; Papert\'s 1969 critique triggered the first "AI winter". The field re-emerged with Boltzmann Machines and back-prop in the 80s, and exploded again with Hinton\'s Deep Belief Networks in 2006 — the start of modern <i>deep learning</i>.',
+      6, 70, 88
+    )
+  },
+
+  /* ─── Q24: checkbox — when to prefer NN over k-NN ────────── */
+  {
+    label: 'Q24 — When to Use Which', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>Per the summary slide, which situations favour <u>Neural Networks</u> over k-NN?</b><br>(Select all that apply.)' },
+      { type: 'checkbox', x: 6, y: 22, w: 88, fs: 13,
+        choices: [
+          'Unstructured, high-dimensional data such as images, audio or text',
+          'A very small toy dataset where you want a quick non-parametric baseline',
+          'Highly complex, non-linear problems',
+          'When interpretability of every decision is the top priority'
+        ],
+        ans: [0, 2] }
+    ],
+    bubble: mkBubble(
+      '<b>Answer: unstructured/high-dim data and complex non-linear problems.</b><br>' +
+      'k-NN is preferred for small/simple tasks. If interpretability matters most, classical methods (logistic regression, decision trees) usually win, since neural nets are famously black-box.',
+      6, 65, 88
+    )
+  },
+
+  /* ─── Q25: cloze open-ended — explain epoch ──────────────── */
+  {
+    label: 'Q25 — Explain in Your Own Words', maxTries: 3,
+    questions: [
+      { type: 'label', x: 6, y: 4, fs: 13, color: '#fff', opacity: 0,
+        text: '<b>In 2–3 sentences, explain the difference between a <i>step</i>, a <i>mini-batch</i> and an <i>epoch</i> during the back-prop algorithm:</b>' },
+      { type: 'cloze', x: 6, y: 22, w: 88, fs: 13, lineSpacing: 1.6,
+        parts: [
+          { blank: true, ans: 'A step is one forward+backward+update iteration on a single mini-batch (a subset of the training set). A mini-batch is the chunk of training examples used for one such step. An epoch is one full pass over the entire training dataset, i.e. enough steps to cover every example exactly once.',
+            w: 720, h: 110, fs: 13, type: 'open',
+            placeholder: 'Write your answer here. It will be evaluated by AI…' }
+        ] }
+    ],
+    bubble: mkBubble(
+      '<b>Reference answer:</b><br>' +
+      '&bull; <b>Step</b>: one forward pass + loss + backward pass + weight update, run on a single mini-batch.<br>' +
+      '&bull; <b>Mini-batch</b>: the small subset of training examples used in one step.<br>' +
+      '&bull; <b>Epoch</b>: one complete pass through the whole dataset, i.e. as many steps as needed to consume every example once. Training typically runs for many epochs.',
+      6, 68, 88
+    )
+  }
+
+];
+</script>
+
+<!-- Quiz engine -->
+<script src="youtube-quiz-engine.js"></script>
+
+</body>
+</html>
