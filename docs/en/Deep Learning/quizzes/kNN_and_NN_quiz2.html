@@ -162,7 +162,7 @@ var GROUPS = [
      GROUP 2 — Original Q5, Q6, Q7  (Q4 removed)
      ════════════════════════════════════════════════════════════ */
   {
-    label: 'Group 2 — k-NN Example (k=3 on the point (3,2))', maxTries: 3,
+    label: 'k-NN Example (k=3 on the point (3,2))', maxTries: 3,
     questions: [
 
       /* ── Row 1 (Q5: 3-NN selection) ── */
@@ -209,11 +209,11 @@ var GROUPS = [
      GROUP 3 — Original Q8, Q9, Q10
      ════════════════════════════════════════════════════════════ */
   {
-    label: 'Group 3 — k-NN Properties', maxTries: 3,
+    label: 'k-NN Properties', maxTries: 3,
     questions: [
 
       /* ── Row 1 (Q8: algorithm steps ordering) ── */
-      { type: 'ordering', x: WIDGET_X + 2, y: 14, w: 60, fs: 11,
+      { type: 'ordering', x: WIDGET_X + 2, y: 8, w: 60, fs: 11,
         question: '<b>Q1.</b> Drag the steps of the k-NN classification algorithm into the correct order:',
         items: [
           'Compute distance from the query point to every training point',
@@ -224,7 +224,7 @@ var GROUPS = [
         ans: [0, 1, 2, 3] },
 
       /* ── Row 2 (Q9: effect of k) ── */
-      { type: 'radio', x: WIDGET_X + 2, y: 48, w: 60, fs: 12,
+      { type: 'radio', x: WIDGET_X + 2, y: 44, w: 60, fs: 12,
         question: '<b>Q2.</b> What typically happens to the decision boundary as $k$ increases?',
         choices: [
           'It becomes more jagged and overfits more',
@@ -235,7 +235,7 @@ var GROUPS = [
         ans: 1 },
 
       /* ── Row 3 (Q10: pros & cons match) ── */
-      { type: 'match', x: WIDGET_X + 2, y: 74, w: 520,
+      { type: 'match', x: WIDGET_X + 2, y: 68, w: 520,
         fs: 11, dotSize: 12, dotGap: 6, colGap: 40,
         question: '<b>Q3.</b> Match each k-NN property with the correct category:',
         left: [
@@ -269,11 +269,11 @@ var GROUPS = [
      GROUP 4 — Original Q11, Q13   (Q12 removed)
      ════════════════════════════════════════════════════════════ */
   {
-    label: 'Group 4 — Shallow Neural Networks & Loss', maxTries: 3,
+    label: 'Shallow Neural Networks & Loss', maxTries: 3,
     questions: [
 
       /* ── Row 1 (Q11: shallow NN equivalence) ── */
-      { type: 'radio', x: WIDGET_X + 2, y: 20, w: 60, fs: 12,
+      { type: 'radio', x: WIDGET_X + 2, y: 15, w: 60, fs: 12,
         question: '<b>Q1.</b> A shallow neural network with a single output neuron and a <i>sigmoid</i> activation is equivalent to which classical model?',
         choices: [
           'Linear regression',
@@ -284,7 +284,7 @@ var GROUPS = [
         ans: 1 },
 
       /* ── Row 2 (Q13: loss for regression) ── */
-      { type: 'radio', x: WIDGET_X + 2, y: 56, w: 60, fs: 11,
+      { type: 'radio', x: WIDGET_X + 2, y: 53, w: 60, fs: 11,
         question: '<b>Q2.</b> Which loss is typically used for a <i>regression</i> NN?',
         choices: [
           'Binary cross-entropy: $-\\big(y\\log\\hat y + (1-y)\\log(1-\\hat y)\\big)$',
@@ -312,21 +312,23 @@ var GROUPS = [
      GROUP 5 — Original Q14, Q15, Q16
      ════════════════════════════════════════════════════════════ */
   {
-    label: 'Group 5 — Gradient Descent & Back-propagation', maxTries: 3,
+    label: 'Gradient Descent & Back-propagation', maxTries: 3,
     questions: [
 
       /* ── Row 1 (Q14: weight update — FIXED cloze) ── */
-      { type: 'cloze', x: WIDGET_X + 2, y: 17, w: 60, fs: 14, lineSpacing: 1.6,
-        question: '<b>Q1.</b> Complete the weight-update rule used in gradient descent (pick the symbol for each blank):',
-        parts: [
-          '$\\omega \\leftarrow \\omega - \\,$',
-          { blank: true, ans: 'eta', w: 70, fs: 13, type: 'select',
-            options: ['eta', 'omega', 'L', 'y_hat'] },
-          '$\\, \\cdot \\dfrac{\\partial \\,}{\\partial \\omega}$ &nbsp;&nbsp; where the numerator inside the derivative is &nbsp;',
-          { blank: true, ans: 'L', w: 70, fs: 13, type: 'select',
-            options: ['eta', 'omega', 'L', 'y_hat'] }
-        ] },
+      {
+        type: 'label', x: WIDGET_X + 2, y: 16, w: 66, fs: 15,
+        text: '<b>Q1.</b> Complete the weight-update rule used in gradient descent (pick the symbol for each blank):',
+      },
 
+      { type: 'cloze', x: WIDGET_X + 2, y: 21, w: 66, fs: 15, lineSpacing: 1.6, color: '#e2e8f0',
+        template: '$\\omega \\leftarrow \\omega - {0}\\cdot \\dfrac{\\partial{1} \\omega}$',
+        blanks: [
+          { blank: true, ans: '$\\eta$', w: 70, fs: 13, type: 'select', options: ['$\\eta$', '$\\omega$', '$L$', '$y_hat$'] },
+          { blank: true, ans: '$L$', w: 70, fs: 13, type: 'select', options: ['$\\eta$', '$\\omega$', '$L$', '$y_hat$'] },
+        ]
+
+      },
       /* ── Row 2 (Q15: what is η) ── */
       { type: 'radio', x: WIDGET_X + 2, y: 44, w: 60, fs: 12,
         question: '<b>Q2.</b> In $\\omega \\leftarrow \\omega - \\eta\\,\\partial L/\\partial \\omega$, what does $\\eta$ represent?',
