@@ -129,16 +129,16 @@ var GROUPS = [
 
       /* ── Row 3 (original Q3, FIXED cloze) ── */
       { type: 'cloze', x: WIDGET_X + 2, y: 70, w: 60, fs: 14, lineSpacing: 1.6,
-        parts: [
-          '<b>Q3.</b> Complete the Euclidean-distance formula used in k-NN \\n(pick what goes in each blank):\\n',
-          '$\\,d(A,B) = \\sqrt{(\\,$',
-          { blank: true, ans: '$x_A$', w: 70, fs: 13, type: 'select',
-            options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] },
-          '$\\, - x_B)^2 + (y_A - \\,$',
-          { blank: true, ans: '$y_B$', w: 70, fs: 13, type: 'select',
-            options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] },
-          '$\\,)^2}$'
-        ] }
+      parts: [
+        '<b>Q3.</b> Complete the Euclidean-distance formula used in k-NN \\n(pick what goes in each blank):\\n',
+        '$d(A,B) =$  √( ',
+        { blank: true, ans: '$x_A$', w: 70, fs: 13, type: 'select',
+          options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] },
+        ' $- \\; x_B)^{2} + (y_A -$ ',
+        { blank: true, ans: '$y_B$', w: 70, fs: 13, type: 'select',
+          options: ['$x_A$', '$x_B$', '$y_A$', '$y_B$'] },
+        ' $)^{2}$'
+      ] },
     ],
     bubbles: [
       mkBubble(
@@ -321,15 +321,15 @@ var GROUPS = [
         text: '<b>Q1.</b> Complete the weight-update rule used in gradient descent (pick the symbol for each blank):',
       },
       { type: 'cloze', x: WIDGET_X + 2, y: 12, w: 66, fs: 15, lineSpacing: 1.6, color: '#e2e8f0',
-        parts: [
-          '$\\omega \\leftarrow \\omega - $',
-          { blank: true, ans: '$\\eta$', w: 70, fs: 13, type: 'select',
-            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
-          '$\\,\\cdot \\dfrac{\\partial\\,$',
-          { blank: true, ans: '$L$', w: 70, fs: 13, type: 'select',
-            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
-          '$\\,}{\\partial \\omega}$'
-        ]
+      parts: [
+        '$\\omega \\leftarrow \\omega -$ ',
+        { blank: true, ans: '$\\eta$', w: 70, fs: 13, type: 'select',
+          options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
+        ' $\\cdot \\; \\partial$ ',
+        { blank: true, ans: '$L$', w: 70, fs: 13, type: 'select',
+          options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
+        ' $/ \\partial \\omega$'
+       ]
       },
       /* ── Row 2 (Q15: what is η) ── */
       { type: 'radio', x: WIDGET_X + 2, y: 26, w: 60, fs: 12,
