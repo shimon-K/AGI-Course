@@ -422,10 +422,10 @@ var GROUPS = [
 
       /* ── Row 1 (Q22: match — SVM & Random Forest REMOVED) ── */
       {
-        type: 'label', x: WIDGET_X + 2, y: 15, w: 560, fs: 11,
+        type: 'label', x: WIDGET_X + 2, y: 9, w: 560, fs: 11,
         text: '<b>Q1.</b> Match each model to its key characteristic from the comparison table:',
       },
-      { type: 'match', x: WIDGET_X + 2, y: 17, w: 560, fs: 9, dotSize: 9, dotGap: 8, colGap: 40,
+      { type: 'match', x: WIDGET_X + 2, y: 15, w: 560, fs: 9, dotSize: 9, dotGap: 8, colGap: 40,
         left: [
           'k-NN',
           'Logistic Regression',
@@ -439,7 +439,7 @@ var GROUPS = [
         ans: [0, 1, 2] },
 
       /* ── Row 2 (Q24: when to use NN) ── */
-      { type: 'checkbox', x: WIDGET_X + 2, y: 32, w: 60, fs: 12,
+      { type: 'checkbox', x: WIDGET_X + 2, y: 38, w: 60, fs: 12,
         question: '<b>Q2.</b> Per the summary slide, which situations favour <u>Neural Networks</u> over k-NN? (select all)',
         choices: [
           'Unstructured, high-dimensional data such as images, audio or text',
@@ -450,12 +450,12 @@ var GROUPS = [
         ans: [0, 2] },
 
       /* ── Row 3 (Q25: open-ended cloze) ── */
-      { type: 'cloze', x: WIDGET_X + 2, y: 63, w: 66, fs: 12, lineSpacing: 1.5,       
+      { type: 'cloze', x: WIDGET_X + 2, y: 65, w: 70, fs: 12, lineSpacing: 1.5,       
         parts: [
           '<b>Q3.</b> Explain the difference between a <i>step</i>, a <i>mini-batch</i> and an <i>epoch</i> during back-propagation:', 
           { blank: true,
             ans: 'A step is one forward+backward+update iteration on a single mini-batch (a subset of the training set). A mini-batch is the chunk of training examples used for one such step. An epoch is one full pass over the entire training dataset, i.e. enough steps to cover every example exactly once.',
-            w: 480, h: 70, fs: 12, type: 'open',
+            w: 580, h: 77, fs: 12, type: 'open',
             placeholder: 'Write your answer here. It will be evaluated by AI…' }
         ] }
     ],
