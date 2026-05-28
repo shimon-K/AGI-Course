@@ -321,12 +321,15 @@ var GROUPS = [
         text: '<b>Q1.</b> Complete the weight-update rule used in gradient descent (pick the symbol for each blank):',
       },
       { type: 'cloze', x: WIDGET_X + 2, y: 12, w: 66, fs: 15, lineSpacing: 1.6, color: '#e2e8f0',
-        template: '$\\omega \\leftarrow \\omega - {0}\\cdot \\dfrac{\\partial{1} \\omega}$',
         parts: [
-          { blank: true, ans: '$\\eta$', w: 70, fs: 13, type: 'select', options: ['$\\eta$', '$\\omega$', '$L$', '$y_hat$'] },
-          { blank: true, ans: '$L$', w: 70, fs: 13, type: 'select', options: ['$\\eta$', '$\\omega$', '$L$', '$y_hat$'] },
+          '$\\omega \\leftarrow \\omega - $',
+          { blank: true, ans: '$\\eta$', w: 70, fs: 13, type: 'select',
+            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
+          '$\\,\\cdot \\dfrac{\\partial\\,$',
+          { blank: true, ans: '$L$', w: 70, fs: 13, type: 'select',
+            options: ['$\\eta$', '$\\omega$', '$L$', '$\\hat{y}$'] },
+          '$\\,}{\\partial \\omega}$'
         ]
-
       },
       /* ── Row 2 (Q15: what is η) ── */
       { type: 'radio', x: WIDGET_X + 2, y: 26, w: 60, fs: 12,
