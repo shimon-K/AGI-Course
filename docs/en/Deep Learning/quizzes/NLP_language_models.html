@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine styles -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css">
+</head>
+<body>
+
+<div id="header">📘 Machine Learning Course — NLP &amp; Language Models Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var BACKGROUND = {
+  enabled:  true,
+  color:    '#ffffff',
+  autoPlay: false
+};
+/* Default gap between auto-timed groups (seconds).
+   First group defaults to time=5, subsequent groups = prev + gap. */
+var DEFAULT_TIME_GAP = 12;
+var POST_QUIZ_DURATION = 15; // Number of seconds after the last question to trigger the summary
+
+function m(base, extra) { var o={}; for(var k in base) o[k]=base[k]; for(var k in extra) o[k]=extra[k]; return o; }
+
+var GROUPS = [
+
+  /* ───────────────────────── 1. NLP vs NLU vs ASR ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'NLP terminology (NLP / NLU / ASR)',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 12, w: 92,
+        question: 'According to the terminology diagram, what is the relationship between NLP, NLU, and ASR?',
+        choices: [
+          'ASR, NLP, and NLU are three completely separate, non-overlapping fields',
+          'NLU is the broadest field, containing NLP, which contains ASR',
+          'NLU is a subset of NLP; ASR (speech) sits alongside / partly outside NLP',
+          'ASR and NLU are identical; NLP is unrelated to both'
+        ],
+        ans: 2
+      }
+    ],
+    bubble: {
+      text: '✓ NLU (Natural Language Understanding) is a subset of NLP — it covers the deeper "understanding" tasks like sentiment analysis, paraphrase / natural language inference, semantic parsing, QA, and summarization. NLP also includes more "surface" tasks like POS tagging, NER, syntactic parsing, and coreference resolution. ASR (Automatic Speech Recognition) and TTS deal with the speech↔text conversion and sit largely outside the core NLP/NLU bubbles (slide 4).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 50, w: 92
+    }
+  },*/
+
+  /* ───────────────────────── 2. Levels of language & ambiguity ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Language levels & ambiguity',
+    questions: [
+      {
+        type: 'ordering', x: 4, y: 10, w: 52,
+        question: 'Order the classic processing levels of language from LOWEST (sounds) to HIGHEST (meaning/intent):',
+        items: [
+          'Semantics (logical forms)',
+          'Phonology (sounds)',
+          'Pragmatics (speech acts)',
+          'Syntax (trees)',
+          'Morphology (morphemes)'
+        ],
+        ans: [1, 4, 3, 0, 2]
+      },
+      {
+        type: 'radio', x: 4, y: 60, w: 52,
+        question: 'In NLP, "ambiguity" and "variability" describe which mismatch between language and meaning?',
+        choices: [
+          'Ambiguity: one form → many meanings; Variability: one meaning → many forms',
+          'Ambiguity: one meaning → many forms; Variability: one form → many meanings',
+          'Both mean exactly the same thing',
+          'Both describe the number of words in a sentence'
+        ],
+        ans: 0
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ The classic hierarchy (slide 5) goes: Phonology (sounds) → Morphology (morphemes) → Syntax (trees) → Semantics (logical forms) → Pragmatics (speech acts). Ambiguity grows as you move UP toward meaning.',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 59, y: 12, w: 40
+      },
+      {
+        text: '✓ Variability = one meaning can be expressed by many different language forms (many ways to say the same thing). Ambiguity = one language form can map to many meanings (the same words mean different things). Both make NLP hard (slides 5, 14).',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 59, y: 56, w: 40
+      }
+    ]
+  },
+
+  /* ───────────────────────── 3. Text representations (set/bag/seq) ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Text representations: tokens / set / bag of words',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 10, w: 92,
+        question: 'What is the KEY difference between a "set of words" and a "bag of words" representation?',
+        choices: [
+          'A set keeps word order; a bag discards order',
+          'A bag counts how many times each word appears; a set only records presence (counts capped at 1)',
+          'A set stores n-grams; a bag stores single words',
+          'There is no difference — they are two names for the same thing'
+        ],
+        ans: 1
+      },
+      {
+        type: 'cloze', x: 4, y: 52, w: 92,
+        parts: [
+          'For the sentence "Would you, could you, in a car?", in the BAG-of-words representation the count of the word "you" is ',
+          { blank: true, ans: '2', w: 50, tol: 0 },
+          ', whereas in the SET-of-words representation its value is ',
+          { blank: true, ans: '1', w: 50, tol: 0 },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Both ignore word order. The difference is counting: a SET of words only records whether a word is present (value 1), while a BAG of words records the multiplicity (frequency) of each word (slides 6–7).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 38, w: 92
+      },
+      {
+        text: '✓ "you" appears twice in the sentence, so the bag-of-words count is 2. The set-of-words representation caps everything at presence/absence, so "you" → 1 (slide 6).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 70, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 4. Distance metrics ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Distance & similarity metrics',
+    questions: [
+      {
+        type: 'match', x: 4, y: 10, w: 380, fs: 13,
+        dotSize: 16, dotGap: 14, colGap: 130,
+        left:  ['Hamming distance', 'Jaccard distance', 'Euclidean distance', 'Cosine similarity'],
+        right: ['Straight-line distance $\\sqrt{\\sum_i z_i^2}$ between count vectors',
+                'Counts positions where two binary vectors differ',
+                'Measures angle between vectors: $\\frac{U\\cdot V}{\\|U\\|\\,\\|V\\|}$',
+                'Based on overlap of two sets (intersection / union)'],
+        ans: [1, 3, 0, 2]
+      }
+    ],
+    bubble: {
+      text: '✓ Hamming → number of positions where two (binary) vectors differ. Jaccard → set-overlap, |A∩B| / |A∪B|. Euclidean → straight-line distance ‖x−y‖ = √(Σ zᵢ²). Cosine similarity → the cosine of the angle between vectors, U·V / (‖U‖‖V‖); it ignores magnitude and captures direction (slide 6).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 60, w: 92
+    }
+  },
+
+  /* ───────────────────────── 5. Euclidean distance computation ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'Euclidean distance computation',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 12, w: 92,
+        parts: [
+          'Two bag-of-words vectors differ only as: $z = x-y = (2, 0, 0, -1, 0, -2, 0, 2)$. ',
+          'The Euclidean distance is $\\|z\\| = \\sqrt{\\sum_i z_i^2}$. Compute $\\sum_i z_i^2 = $ ',
+          { blank: true, ans: '13', w: 55, tol: 0 },
+          ', so $\\|z\\| = $ ',
+          { blank: true, ans: '3.61', w: 60, tol: 0.05 },
+          ' (≈ 3.6).'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ Square each component and sum: 2²+0²+0²+(−1)²+0²+(−2)²+0²+2² = 4+0+0+1+0+4+0+4 = 13. Then √13 ≈ 3.61. (The lecture\'s simplified example used rounded counts giving d≈3; the method — sum of squared differences, then square root — is the point, slide 6.)',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 42, w: 92
+    }
+  },*/
+
+  /* ───────────────────────── 6. N-grams & TF-IDF ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'N-grams and TF-IDF',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 10, w: 92,
+        parts: [
+          'A "bag of n-grams" counts contiguous sequences of n tokens. For the tokens [would, you, could, you, in, a, car?], the 2-gram "you could" is one entry. How many tokens make up each unit in a 2-gram (bigram)? ',
+          { blank: true, ans: '2', w: 45, tol: 0 },
+          '.'
+        ]
+      },
+      {
+        type: 'radio', x: 4, y: 42, w: 92,
+        question: 'What is the main purpose of TF-IDF compared to plain word counting?',
+        choices: [
+          'It keeps word order, unlike bag-of-words',
+          'It down-weights very frequent, low-information words (e.g. "the") and up-weights distinctive ones',
+          'It converts text into dense neural embeddings',
+          'It increases the count of common words like "the"'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ A bigram (2-gram) is made of 2 consecutive tokens. N-grams capture some local word-order information that plain bag-of-words throws away (slide 7).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 27, w: 92
+      },
+      {
+        text: '✓ TF-IDF is still a counting (frequentist) method, but it disregards / down-weights words that are too frequent across documents (like "the") because they carry little discriminative information, while emphasizing rarer, more informative words (slide 7).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 68, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 7. Frequentist vs Vectorial ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Frequentist (sparse) vs Vectorial (dense)',
+    questions: [
+      {
+        type: 'checkbox', x: 4, y: 10, w: 92,
+        question: 'Select ALL statements that correctly describe the FREQUENTIST (sparse, counting) representation:',
+        choices: [
+          'Vectors are very high-dimensional (e.g. 30K+) and mostly zeros',
+          'It is built by counting word occurrences / co-occurrences',
+          'It typically produces short, dense vectors of real numbers (e.g. length 784)',
+          'It captures rich semantic similarity between words automatically',
+          'Example value: [0, 0, 0, 1, 0, … 0]'
+        ],
+        ans: [0, 1, 4]
+      },
+      {
+        type: 'cloze', x: 4, y: 58, w: 92,
+        parts: [
+          'The VECTORIAL (dense) representation is best described as ',
+          { blank: true, ans: 'dense', w: 90, type: 'select', options: ['sparse', 'dense'] },
+          ', while the FREQUENTIST (counting) representation is ',
+          { blank: true, ans: 'sparse', w: 90, type: 'select', options: ['sparse', 'dense'] },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Frequentist = sparse: high-dimensional vectors (30K+) built by counting occurrences/co-occurrences, mostly zeros, e.g. [0,0,0,1,0,…,0]. It does NOT automatically encode semantic similarity — that is the strength of dense vectorial embeddings (slide 8).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 43, w: 92
+      },
+      {
+        text: '✓ Frequentist = sparse, high-dimensional counting vectors; Vectorial = dense, lower-dimensional learned vectors of real numbers (e.g. 784-dim) such as [0.2, 0.7, 0.1, …] (slides 8, 25).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 72, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 8. word2vec training options ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'word2vec: CBOW vs Skip-gram',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 10, w: 92,
+        question: 'word2vec has two training schemes. One predicts the center word from surrounding context words; the other predicts surrounding context words from the center word. Which statement is correct?',
+        choices: [
+          'CBOW predicts the center word from context; Skip-gram predicts context from the center word',
+          'CBOW predicts context from the center word; Skip-gram predicts the center word from context',
+          'Both predict the next sentence',
+          'Both require labeled (supervised) data'
+        ],
+        ans: 0
+      },
+      {
+        type: 'cloze', x: 4, y: 52, w: 92,
+        parts: [
+          'word2vec is trained as an ',
+          { blank: true, ans: 'encoder-decoder', w: 170 },
+          ' neural network; the learned embedding for a word is read out of the $W_{V\\times N}$ weight ',
+          { blank: true, ans: 'matrix', w: 110 },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ CBOW (Continuous Bag of Words) averages the context words and predicts the center word — it "doesn\'t mind the order". Skip-gram does the reverse: from the center word it predicts each surrounding context word, emphasizing specific words (slide 9).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 38, w: 92
+      },
+      {
+        text: '✓ word2vec uses an encoder–decoder architecture trained on next/near-word prediction over a huge corpus. After training, each word\'s dense embedding is taken as the corresponding row of the input weight matrix W_{V×N} (slide 10).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 70, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 9. word2vec emergent properties ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'word2vec emergent properties',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 12, w: 92,
+        parts: [
+          'Word embeddings show meaningful directions. The famous analogy is: king − man + woman ≈ ',
+          { blank: true, ans: 'queen', w: 120 },
+          '. This is possible because semantic relations (gender, verb tense, country→capital) appear as consistent ',
+          { blank: true, ans: 'directions', w: 150 },
+          ' in the embedding space.'
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ A key emergent property of word2vec embeddings is that analogies become vector arithmetic: king − man + woman ≈ queen. Relations such as male↔female, verb tense (walk↔walked), and country↔capital (France↔Paris) form consistent directions, and similar words form topic clusters (slides 11, 25).',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 45, w: 92
+    }
+  },
+
+  /* ───────────────────────── 10. Embedding use cases ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Embedding use cases',
+    questions: [
+      {
+        type: 'checkbox', x: 4, y: 10, w: 92,
+        question: 'Select ALL tasks listed in the lecture as use cases of embeddings:',
+        choices: [
+          'Search (rank results by relevance to a query)',
+          'Clustering (group texts by similarity)',
+          'Recommendations (suggest related items)',
+          'Anomaly / outlier detection',
+          'Compiling source code into machine code',
+          'Classification (assign the most similar label)'
+        ],
+        ans: [0, 1, 2, 3, 5]
+      }
+    ],
+    bubble: {
+      text: '✓ Embedding use cases (slide 13): search (rank by relevance), clustering (group by similarity), recommendations (related items), anomaly detection (outliers with little relatedness), diversity measurement, and classification (label by nearest/most-similar class). Compiling source code is NOT an embedding use case.',
+      style: 'bubble', tailSize: 20, tail: 'top',
+      x: 4, y: 58, w: 92
+    }
+  },
+
+  /* ───────────────────────── 11. Contextual vs non-contextual ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Contextual vs Non-contextual embeddings',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 7, w: 92,
+        question: 'The word "bank" has the same vector in "a grassy bank" and "the Bank of England" in one scheme, but different vectors in the other. Which is which?',
+        choices: [
+          'Non-contextual gives ONE fixed vector per word; contextual gives a DIFFERENT vector depending on surrounding words',
+          'Contextual gives one fixed vector; non-contextual gives different vectors per sentence',
+          'Both always give the same vector',
+          'Both always give different vectors'
+        ],
+        ans: 0
+      },
+      {
+        type: 'cloze', x: 4, y: 52, w: 92,
+        parts: [
+          'Non-contextual embeddings (e.g. word2vec) assign each word ',
+          { blank: true, ans: 'one', w: 90, type: 'select', options: ['one', 'many'] },
+          ' fixed vector. Contextual embeddings (e.g. from Transformers) produce a vector that ',
+          { blank: true, ans: 'depends on context', w: 200, type: 'select', options: ['is identical everywhere', 'depends on context'] },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Non-contextual embeddings (word2vec, GloVe) give each word a single fixed vector regardless of usage — so "bank" (river) and "bank" (finance) collapse to one point. Contextual embeddings pass the whole sentence through an encoder, so "bank" gets different vectors near "grassy" vs "England" (slides 15–16).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 2, y: 38, w: 95
+      },
+      {
+        text: '✓ Non-contextual = one fixed vector per word (computed once, used everywhere). Contextual = the vector is computed from the surrounding words via self-attention, so it changes with context (slide 16).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 72, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 12. Transformer types ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Transformer types (encoder / decoder / both)',
+    questions: [
+      {
+        type: 'match', x: 4, y: 10, w: 380, fs: 13,
+        dotSize: 16, dotGap: 14, colGap: 130,
+        left:  ['Encoder-only (BERT, ViT)', 'Decoder-only (GPT)', 'Encoder-decoder (T5, BART)'],
+        right: ['Generates output from a fixed input (text generation)',
+                'Sequence-to-sequence tasks (translation, summarization)',
+                'Text / sentence classification, masked language modeling'],
+        ans: [2, 0, 1]
+      },
+      {
+        type: 'cloze', x: 4, y: 50, w: 92,
+        parts: [
+          'Encoder-only models like BERT read the whole sentence at once, so they are ',
+          { blank: true, ans: 'bi-directional', w: 150, type: 'select', options: ['bi-directional', 'uni-directional'] },
+          '. Decoder-only models like GPT read left-to-right, so they are ',
+          { blank: true, ans: 'uni-directional', w: 160, type: 'select', options: ['bi-directional', 'uni-directional'] },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Encoder-only (BERT, ViT) → classification / NER / masked LM. Decoder-only (GPT) → autoregressive text generation from a fixed input. Encoder-decoder (T5, BART) → seq2seq tasks like translation and summarization (slides 17, 28).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 34, w: 92
+      },
+      {
+        text: '✓ BERT (encoder, masked LM) sees context on both sides → bi-directional. GPT (decoder, autoregressive) predicts the next token using only the left context → uni-directional (slide 17).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 70, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 13. ELMo / BERT / GPT ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'Contextual models: ELMo, BERT, GPT',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 9, w: 94,
+        parts: [
+          '1) ELMo is based on a bi-directional LSTM:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n2) BERT is a decoder-only Transformer trained mainly for text generation:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n3) BERT is trained with masked language modeling and next-sentence prediction:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n4) GPT is a decoder Transformer:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] }
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ 1) True — ELMo is a bi-directional LSTM. 2) False — BERT is an ENCODER transformer, used for understanding/classification, not generation. 3) True — BERT is trained on masked language modeling (fill the [MASK]) plus next/sentence prediction. 4) True — GPT is a DECODER transformer (autoregressive) (slides 17, 25).',
+      style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 56, w: 96
+    }
+  },*/
+
+  /* ───────────────────────── 14. Multimodal: CLIP & data2vec ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'Multimodal embeddings: CLIP & data2vec',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 10, w: 92,
+        question: 'How does OpenAI\'s CLIP learn to connect images and text?',
+        choices: [
+          'It labels every image with a single class using a fixed classifier',
+          'It jointly trains an image encoder and a text encoder (contrastively) to match the correct (image, text) pairs, enabling zero-shot classification',
+          'It translates images into spoken audio',
+          'It is a decoder-only language model trained only on text'
+        ],
+        ans: 1
+      },
+      {
+        type: 'radio', x: 4, y: 52, w: 92,
+        question: 'In data2vec, what does the STUDENT model try to predict?',
+        choices: [
+          'The exact raw pixels / characters of the masked input',
+          'The latent (target) representation produced by the teacher from the unmasked input',
+          'The next sentence in the document',
+          'A human-provided label for each input'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ CLIP uses contrastive pre-training: an image encoder and a text encoder are trained together to give matching (image, text) pairs high similarity and mismatched pairs low similarity. At test time the text encoder builds a zero-shot classifier from class names like "a photo of a {dog}" (slide 19).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 34, w: 92
+      },
+      {
+        text: '✓ data2vec uses a teacher–student (self-distillation) setup that works the same way for text, speech, and images. The teacher encodes the full input into a latent target; the student sees a MASKED version and must predict that latent teacher representation. The teacher weights are an EMA of the student (slides 20–21).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 72, w: 92
+      }
+    ]
+  },*/
+
+  /* ───────────────────────── 15. Evolution of text representations ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Evolution of text representations',
+    questions: [
+      {
+        type: 'ordering', x: 4, y: 12, w: 46,
+        question: 'Order the evolution of text representation techniques from earliest to latest:',
+        items: [
+          'Contextual embeddings (ELMo)',
+          'Bag-of-Words',
+          'LLMs in the wild (Copilot, chatbots, agents)',
+          'Word embeddings (Word2Vec, GloVe)',
+          'Transformers (BERT, GPT)'
+        ],
+        ans: [1, 3, 0, 4, 2]
+      }
+    ],
+    bubble: {
+      text: '✓ The progression (slide 23): Bag-of-Words → Word embeddings (Word2Vec, GloVe) → Contextual embeddings (ELMo) → Transformers (BERT, GPT) → LLMs in the wild (Copilot, chatbots, agents). Each step adds more context and semantic richness.',
+      style: 'bubble', tailSize: 20, tail: 'left',
+      x: 52, y: 18, w: 46
+    }
+  },
+
+  /* ───────────────────────── 16. Representation comparison table ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Comparing representation techniques',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 9, w: 94,
+        parts: [
+          '1) Bag-of-Words produces high-dimensional, sparse vectors:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n2) Word2Vec can fully capture word order / sequence information:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n3) BERT and GPT capture rich semantic meaning and handle out-of-vocabulary words well:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n4) Bag-of-Words encodes contextual information about each word:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] }
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ From the comparison table (slide 24): 1) True — BoW is high-dimensional and sparse. 2) False — Word2Vec captures word relationships but CANNOT handle sequence/order information. 3) True — BERT/GPT capture rich semantics and handle OOV words well. 4) False — BoW carries no contextual information about word usage.',
+      style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 56, w: 96
+    }
+  },
+
+  /* ───────────────────────── 17. LLM forward pass / next-token ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'LLM forward pass & next-token prediction',
+    questions: [
+      {
+        type: 'ordering', x: 4, y: 10, w: 46,
+        question: 'Order the main stages of an LLM forward pass that produces the next token:',
+        items: [
+          'Attention (+ LayerNorm, MLP) over the sequence',
+          'Tokenization (text → token IDs)',
+          'Softmax → probability over the vocabulary, then pick a token',
+          'Embedding (token IDs → vectors)'
+        ],
+        ans: [1, 3, 0, 2]
+      },
+      {
+        type: 'radio', x: 4, y: 58, w: 46,
+        question: 'A decoder-only LLM fundamentally performs which task at each step?',
+        choices: [
+          'Clustering the input words',
+          'Predicting the next token given the preceding tokens',
+          'Translating between two fixed languages only',
+          'Sorting the vocabulary alphabetically'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ LLM forward pass (slides 31–32): (1) Tokenization — text → token IDs. (2) Embedding — IDs → dense vectors. (3) Attention with LayerNorm and MLP blocks. (4) Softmax over the vocabulary → probabilities, then a token is selected. The logits become probabilities that sum to 1.',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 52, y: 12, w: 46
+      },
+      {
+        text: '✓ A decoder-only LLM (GPT-style) is an autoregressive next-token predictor: given "Earth is a", it produces a probability distribution and picks the most suitable next token (e.g. "planet" at 60%), then repeats (slides 30, 33).',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 52, y: 58, w: 46
+      }
+    ]
+  },
+
+  /* ───────────────────────── 18. Decoding strategies & temperature ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'Decoding strategies & temperature',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 10, w: 92,
+        question: 'What effect does RAISING the softmax temperature τ have on an LLM\'s output distribution?',
+        choices: [
+          'Makes the distribution more uniform → more diverse / random output',
+          'Makes the distribution more spiky → always picks the single most likely token',
+          'Removes the vocabulary entirely',
+          'Has no effect on sampling'
+        ],
+        ans: 0
+      },
+      {
+        type: 'cloze', x: 4, y: 52, w: 92,
+        parts: [
+          'In ',
+          { blank: true, ans: 'top-k', w: 100, type: 'select', options: ['top-k', 'top-p'] },
+          ' sampling you keep the k highest-probability tokens, while in ',
+          { blank: true, ans: 'top-p', w: 100, type: 'select', options: ['top-k', 'top-p'] },
+          ' (nucleus) sampling you keep the smallest set of tokens whose cumulative probability reaches p.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Temperature τ rescales the logits before softmax. Higher τ → flatter (more uniform) distribution → more diverse, creative, random text. Lower τ → spikier distribution concentrated on top words → more deterministic. Note: temperature is NOT itself a decoding algorithm; it is applied alongside one (slide 34).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 35, w: 92
+      },
+      {
+        text: '✓ top-k keeps a FIXED number (k) of the most probable tokens. top-p (nucleus) keeps a VARIABLE number — the smallest set whose probabilities sum to at least p. Greedy decoding always takes the single argmax; beam search keeps several candidate sequences (slide 34).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 68, w: 92
+      }
+    ]
+  },
+
+  /* ───────────────────────── 19. LLM training pipeline ───────────────────────── */
+  {
+    maxTries: 3,
+    label: 'LLM training pipeline',
+    questions: [
+      {
+        type: 'ordering', x: 4, y: 10, w: 46,
+        question: 'Order the three main stages of the LLM training pipeline:',
+        items: [
+          'RLHF (align with human preferences for usefulness & safety)',
+          'Self-supervised pre-training (next-word prediction → base model)',
+          'Supervised Fine-Tuning / SFT (follow instructions → instruct model)'
+        ],
+        ans: [1, 2, 0]
+      },
+      {
+        type: 'radio', x: 4, y: 56, w: 46,
+        question: 'What is the goal of the pre-training stage of an LLM?',
+        choices: [
+          'To align the model with human values using preference data',
+          'To learn general language ability via self-supervised next-word prediction on huge unlabeled text → a foundation model',
+          'To teach the model to follow specific instructions using labeled pairs',
+          'To compress the model for deployment'
+        ],
+        ans: 1
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ Pipeline (slide 35): (1) Self-supervised PRE-TRAINING (next-word prediction) → base/foundation model. (2) SUPERVISED FINE-TUNING (SFT) on instruction–response pairs → instruct model. (3) RLHF to maximize usefulness and safety by aligning with human preferences.',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 52, y: 12, w: 46
+      },
+      {
+        text: '✓ Pre-training is self-supervised: the model learns to predict the next word over massive UNLABELED corpora, producing a general-purpose foundation model. Unlike traditional ML (one labeled dataset per task), one foundation model is later adapted to many tasks (slides 35–36).',
+        style: 'bubble', tailSize: 20, tail: 'left',
+        x: 52, y: 56, w: 46
+      }
+    ]
+  },
+
+  /* ───────────────────────── 20. SFT vs CPT & loss ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'SFT, continued pre-training & the loss',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 10, w: 92,
+        question: 'What distinguishes Supervised Fine-Tuning (SFT) from Continued Pre-Training (CPT)?',
+        choices: [
+          'SFT uses (instruction, input, output) pairs to teach instruction-following; CPT keeps doing next-word prediction on raw domain text (e.g. medical, legal)',
+          'SFT uses raw text only; CPT uses labeled instruction pairs',
+          'They are identical techniques',
+          'SFT removes parameters; CPT adds parameters'
+        ],
+        ans: 0
+      },
+      {
+        type: 'cloze', x: 4, y: 54, w: 92,
+        parts: [
+          'The training loss shown is cross-entropy, $loss = -\\sum_{k=1}^{K} y_k \\log p_k$. Because $y$ is a one-hot vector, this simplifies to $-\\log P_{correct}$. If the model gives the correct token probability $P_{correct}=1$, the loss equals ',
+          { blank: true, ans: '0', w: 55, tol: 0 },
+          '.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ SFT teaches instruction-following from (instruction, input, output) examples — e.g. "Convert 25°C to Fahrenheit" → step-by-step answer. Continued Pre-Training (CPT) just continues next-word prediction on large amounts of RAW domain text (medical, legal) so the model absorbs domain knowledge (slides 37–39).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 37, w: 92
+      },
+      {
+        text: '✓ Cross-entropy with a one-hot target collapses to −log(P_correct). When the model is perfectly confident and correct, P_correct = 1, and −log(1) = 0 — no loss. As P_correct → 0, the loss → ∞, strongly penalizing wrong/uncertain predictions (slide 37).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 70, w: 92
+      }
+    ]
+  },*/
+
+  /* ───────────────────────── 21. RLHF / RLVR / alignment ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'Alignment: RLHF, RLVR, DeepSeek',
+    questions: [
+      {
+        type: 'cloze', x: 4, y: 11, w: 94,
+        parts: [
+          '1) RLHF aligns an LLM using human preference signals (e.g. PPO, DPO):  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n2) RLVR (Reinforcement Learning from Verified Rewards) relies on automatic verifiers instead of human preference labels:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n3) RLVR (as used in DeepSeek) is associated with producing chain-of-thought (CoT) reasoning:  ',
+          { blank: true, ans: 'True', w: 80, type: 'select', options: ['True', 'False'] },
+          '.\\n4) Prompt engineering changes the model\'s weights during inference:  ',
+          { blank: true, ans: 'False', w: 80, type: 'select', options: ['True', 'False'] }
+        ]
+      }
+    ],
+    bubble: {
+      text: '✓ 1) True — RLHF aligns the model with human preferences, e.g. via PPO or DPO. 2) True — RLVR uses automatic VERIFIERS (verified rewards) rather than human preference labels. 3) True — RLVR in DeepSeek is used to elicit chain-of-thought reasoning. 4) False — prompt engineering is an inference-time technique; it shapes the output via the prompt but does NOT change the model weights (slide 41).',
+      style: 'bubble', tailSize: 11, tail: 'top',
+      x: 2, y: 60, w: 96
+    }
+  },*/
+
+  /* ───────────────────────── 22. RAG vs GraphRAG ───────────────────────── 
+  {
+    maxTries: 3,
+    label: 'RAG and GraphRAG',
+    questions: [
+      {
+        type: 'radio', x: 4, y: 12, w: 92,
+        question: 'What is the core idea of Retrieval-Augmented Generation (RAG)?',
+        choices: [
+          'Retrain the LLM from scratch on every new question',
+          'Store documents as vectors in a vector database, retrieve the most relevant ones at query time, and feed them to the LLM as context',
+          'Compress the model into a smaller one',
+          'Replace the decoder with an encoder'
+        ],
+        ans: 1
+      },
+      {
+        type: 'cloze', x: 4, y: 55, w: 92,
+        parts: [
+          'GraphRAG strengthens ordinary RAG by adding ',
+          { blank: true, ans: 'graph', w: 110, type: 'select', options: ['graph', 'audio'] },
+          ' search (e.g. over a knowledge graph) on top of vector retrieval.'
+        ]
+      }
+    ],
+    bubbles: [
+      {
+        text: '✓ RAG stores knowledge as embeddings in a vector database; at query time it retrieves the most relevant chunks and supplies them to the LLM as extra context, so answers are grounded in external/up-to-date information without retraining (slide 25).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 30, w: 92
+      },
+      {
+        text: '✓ GraphRAG augments RAG with graph search over knowledge graphs (KGs), letting the system follow relationships between entities rather than relying on vector similarity alone (slide 25).',
+        style: 'bubble', tailSize: 20, tail: 'top',
+        x: 4, y: 72, w: 92
+      }
+    ]
+  },*/
+
+  /* ───────────────────────── 23. Open-ended summary questions ───────────────────────── */
+  {
+    label: 'NLP — open-ended review questions',
+    maxTries: 3,
+    questions: [
+      {
+        type: 'cloze', x: 5, y: 8, w: 96, fs: 16, lineSpacing: 1.4,
+        parts: [
+          'Explain the difference between a frequentist (sparse) and a vectorial (dense) text representation.\n',
+          { blank: true, type: 'open', w: 760, h: 95,
+            ans: 'Frequentist representations are sparse, very high-dimensional vectors built by counting word occurrences or co-occurrences (e.g. bag-of-words, TF-IDF), mostly zeros. Vectorial representations are dense, lower-dimensional learned vectors of real numbers (e.g. word2vec) that capture semantic similarity between words.' }
+        ]
+      },
+      {
+        type: 'cloze', x: 5, y: 34, w: 90, fs: 16, lineSpacing: 1.4,
+        parts: [
+          'Why are contextual embeddings (e.g. from BERT/Transformers) more powerful than non-contextual ones (e.g. word2vec)?\n',
+          { blank: true, type: 'open', w: 760, h: 95,
+            ans: 'Non-contextual embeddings give each word one fixed vector regardless of usage, so they cannot disambiguate polysemous words like "bank". Contextual embeddings compute a word\'s vector from its surrounding words via self-attention, so the same word gets different vectors in different contexts, capturing meaning and resolving ambiguity.' }
+        ]
+      },
+      {
+        type: 'cloze', x: 5, y: 64, w: 96, fs: 16, lineSpacing: 1.4,
+        parts: [
+          'List the three main stages of the LLM training pipeline and the purpose of each.\n',
+          { blank: true, type: 'open', w: 760, h: 95,
+            ans: 'Pre-training: self-supervised next-word prediction on huge unlabeled text to build a general foundation model. Supervised Fine-Tuning (SFT): training on instruction-response pairs so the model follows instructions. RLHF: reinforcement learning from human feedback to align the model with human preferences, maximizing usefulness and safety.' }
+        ]
+      }
+    ]
+  }
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+</body>
+</html>
