@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autoregressive Models Quiz</title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine stylesheet -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css" />
+</head>
+<body>
+
+<div id="header">Generative Models — Autoregressive (AR) Models Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+/* ───────────────────────────────────────────────────────────────
+   Quiz configuration — based on "Auto-Regressive (AR) models"
+   slides 30–39: chain rule, MLE, FVSBN, NADE, MADE,
+   PixelRNN / PixelCNN / WaveNet, comparison & summary.
+   Groups go from easy (recall) to hard (generalisation).
+   ─────────────────────────────────────────────────────────────── */
+
+var VIDEO_ID = '';
+var BACKGROUND = {
+  enabled : true,
+  color   : 'linear-gradient(135deg, #fbfaf6 0%, #eef2fb 100%)',
+  autoPlay: false
+};
+
+var DEFAULT_TIME_GAP   = 4;
+var POST_QUIZ_DURATION = 12;
+
+var MOODLE = { enabled: false };
+
+/* ───────────────────────────────────────────────────────────────
+   Helpers
+   ─────────────────────────────────────────────────────────────── */
+var BUBBLE_DEFAULTS = {
+  style       : 'bubble',
+  tail        : 'left',
+  bg          : 'rgba(255,248,200,0.97)',
+  borderColor : '#d4a017',
+  color       : '#3a2e00',
+  fs          : 10.5,
+  padding     : 7,
+  borderRadius: 10,
+  lineSpacing : 1.38
+};
+
+/* Bubble on the right side at the y-level of its question */
+function mkBubble(text, y, opts) {
+  var b = { x: 70, y: y, w: 28, text: text };
+  for (var k in BUBBLE_DEFAULTS) b[k] = BUBBLE_DEFAULTS[k];
+  if (opts) for (var k2 in opts) b[k2] = opts[k2];
+  return b;
+}
+
+/* Question label (used above match / hotspot widgets) */
+function lbl(x, y, text, fs) {
+  return { type: 'label', x: x, y: y, fs: fs || 11.5,
+           color: '#111', opacity: 0,
+           text: '<div style="text-align:left">' + text + '</div>' };
+}
+
+/* Inline SVG diagrams as data URIs (square, for hotspot accuracy) */
+function svgURI(s) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+}
+function svgNode(cx, cy, t, hl) {
+  return '<circle cx="' + cx + '" cy="' + cy + '" r="13" fill="' + (hl ? '#fbbf24' : '#e2e8f0') +
+         '" stroke="' + (hl ? '#f97316' : '#94a3b8') + '" stroke-width="' + (hl ? 4 : 2) + '"/>' +
+         '<text x="' + cx + '" y="' + (cy + 4.5) + '" font-size="13" font-weight="bold" ' +
+         'text-anchor="middle" fill="#0f172a">' + t + '</text>';
+}
+function svgText(x, y, t, fs, col, anchor) {
+  return '<text x="' + x + '" y="' + y + '" font-size="' + fs + '" text-anchor="' + (anchor || 'middle') +
+         '" fill="' + (col || '#cbd5e1') + '">' + t + '</text>';
+}
+
+/* MADE diagram: outputs (top), one hidden layer, inputs (bottom).
+   Numbers inside the nodes are MADE ordering / connectivity labels m. */
+var MADE_SVG = svgURI(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" font-family="Arial, sans-serif">' +
+  '<rect x="0" y="0" width="200" height="200" rx="8" fill="#1e293b"/>' +
+  svgText(6, 76, 'hidden', 8, '#94a3b8', 'start') +
+  svgText(100, 18, 'p(x₁|·)', 8.5, '#cbd5e1').replace('x="100"', 'x="50"') +
+  svgText(100, 18, 'p(x₂)', 8.5, '#cbd5e1') +
+  svgText(150, 18, 'p(x₃|·)', 8.5, '#cbd5e1') +
+  svgNode(50, 40, '3') + svgNode(100, 40, '1') + svgNode(150, 40, '2') +
+  svgNode(35, 100, '2', true) + svgNode(78, 100, '1') + svgNode(122, 100, '2') + svgNode(165, 100, '2') +
+  svgNode(50, 160, '3') + svgNode(100, 160, '1') + svgNode(150, 160, '2') +
+  svgText(50, 190, 'x₁', 11, '#e2e8f0') + svgText(100, 190, 'x₂', 11, '#e2e8f0') +
+  svgText(150, 190, 'x₃', 11, '#e2e8f0') +
+  '</svg>'
+);
+
+/* 3×3 pixel neighbourhood; centre pixel (★) is the one being predicted */
+var GRID_SVG = (function () {
+  var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" font-family="Arial, sans-serif">' +
+          '<rect x="0" y="0" width="200" height="200" rx="8" fill="#1e293b"/>';
+  for (var r = 0; r < 3; r++) {
+    for (var c = 0; c < 3; c++) {
+      var isC = (r === 1 && c === 1);
+      s += '<rect x="' + (12 + 60 * c) + '" y="' + (12 + 60 * r) + '" width="56" height="56" rx="4" fill="' +
+           (isC ? '#fbbf24' : '#cbd5e1') + '"/>';
+    }
+  }
+  s += '<text x="100" y="111" font-size="30" text-anchor="middle" fill="#7c2d12">★</text></svg>';
+  return svgURI(s);
+})();
+
+/* ───────────────────────────────────────────────────────────────
+   GROUPS — questions stacked vertically on the left (x≈4–68%),
+   explanation bubble for each question on the right at its level.
+   ─────────────────────────────────────────────────────────────── */
+var GROUPS = [
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 1 — AR basics & the chain rule   (easy)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'AR Basics — The Chain Rule', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> In generative modelling, what does <i>autoregressive</i> (AR) mean?',
+        choices: [
+          'Predicting an external label $y$ from an input $\\mathbf x$',
+          'Predicting part(s) of a data point from other (previous) parts of the same data point',
+          'Compressing $\\mathbf x$ into a low-dimensional latent code $\\mathbf z$',
+          'Averaging the predictions of many independent models'
+        ],
+        ans: 1 },
+
+      { type: 'cloze', x: 4, y: 35, w: 64, fs: 13, lineSpacing: 1.9,
+        parts: [
+          '<b>Q2.</b> Complete the exact chain-rule factorisation:\\n',
+          '$p(x_1,x_2,x_3,x_4)=p(x_1)\\,p(x_2\\mid x_1)\\,p(x_3\\mid$ ',
+          { blank: true, ans: '$x_1,x_2$', w: 80, fs: 13, type: 'select',
+            options: ['$x_1$', '$x_2$', '$x_1,x_2$', '$x_4$'] },
+          ' $)\\;p(x_4\\mid$ ',
+          { blank: true, ans: '$x_1,x_2,x_3$', w: 100, fs: 13, type: 'select',
+            options: ['$x_3$', '$x_2,x_3$', '$x_1,x_2,x_3$', '$x_1$'] },
+          ' $)$'
+        ] },
+
+      { type: 'radio', x: 4, y: 50, w: 64, fs: 11.5,
+        question: '<b>Q3.</b> In the “Once upon a time…” diagram, one network box serves every position. This means:',
+        choices: [
+          'Each position has its own separate set of parameters',
+          'The parameters are shared across all positions / contexts',
+          'The model may look at future words when predicting the current one',
+          'Only RNNs can be used inside the box'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Predict parts of x from other parts of x.</b><br>' +
+        'AR models learn the structure of the data itself: each element $x_i$ is predicted from the ' +
+        'preceding elements of the <i>same</i> data point — no external labels are needed.', 8),
+      mkBubble('<b>Q2 — $x_1,x_2$ and $x_1,x_2,x_3$.</b><br>' +
+        'The chain rule $p(\\mathbf x)=\\prod_i p(x_i\\mid \\mathbf x_{<i})$ is exact; AR models only ' +
+        'approximate each factor with a network $p_{\\text{Neural}}$.', 34),
+      mkBubble('<b>Q3 — Shared parameters.</b><br>' +
+        'One network (DNN, RNN, Transformer…) is applied to every prefix, so the parameter count does not ' +
+        'grow with the position. A plain DNN can play this role too — via masking (MADE).', 53)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 2 — MLE optimisation for AR   (easy → medium)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'MLE Training of AR Models', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> Why maximise the log-likelihood $\\ell(\\theta)=\\log L(\\theta,\\mathcal D)$ rather than $L$ itself?',
+        choices: [
+          'The log changes which $\\theta$ is optimal',
+          'Products of many small probabilities become sums — numerically stable, same maximiser',
+          'The log removes the need for back-propagation',
+          'The log makes the model non-autoregressive'
+        ],
+        ans: 1 },
+
+      { type: 'radio', x: 4, y: 36, w: 64, fs: 11.5,
+        question: '<b>Q2.</b> The slide updates $\\theta^{t+1}=\\theta^t+\\alpha_t ∇_\\theta\\ell(\\theta)$. Which statement is correct?',
+        choices: [
+          'It is gradient <i>ascent</i> on the LL — equivalent to gradient descent on the NLL',
+          'The “+” is a typo: it must be a “−” since we always descend',
+          'It works only with full-batch GD, never with mini-batch SGD'
+        ],
+        ans: 0 },
+
+      { type: 'radio', x: 4, y: 61, w: 64, fs: 11.5,
+        question: '<b>Q3.</b> With $\\theta$ <u>shared</u> by all conditionals (NADE, PixelCNN), the correct gradient $∇_\\theta\\ell(\\theta)$ is:',
+        choices: [
+          '$\\sum_{j=1}^{m}∇_{\\theta}\\log p_{\\text{neural}}(x_1^{(j)};\\theta)$',
+          '$\\sum_{j=1}^{m}\\sum_{i=1}^{n}∇_{\\theta}\\log p_{\\text{neural}}(x_i^{(j)}\\mid \\mathbf x_{<i}^{(j)};\\theta)$',
+          '$\\prod_{j=1}^{m}\\prod_{i=1}^{n}∇_{\\theta}\\, p_{\\text{neural}}(x_i^{(j)}\\mid \\mathbf x_{<i}^{(j)};\\theta)$'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Sum of logs, same maximiser.</b><br>' +
+        '$\\log$ is monotonic, so $\\arg\\max L=\\arg\\max \\ell$. A product of $m\\cdot n$ probabilities underflows; ' +
+        'a sum of logs is stable and splits into per-sample, per-feature terms. Minimising $-\\ell$ is the NLL loss.', 8),
+      mkBubble('<b>Q2 — Ascent on LL ≡ descent on NLL.</b><br>' +
+        'The “+” is right because we <i>maximise</i> $\\ell$. SGD on mini-batches gives an unbiased Monte-Carlo ' +
+        'estimate of the same gradient (add regularisation against over-fitting).', 35),
+      mkBubble('<b>Q3 — The double sum.</b><br>' +
+        'With shared $\\theta$ every conditional depends on $\\theta$, so we sum over samples $j$ <i>and</i> features $i$. ' +
+        'The inner sum collapses to one term only when each $\\theta_i$ belongs to a single conditional (no sharing).', 61)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 3 — FVSBN   (medium)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'FVSBN — Sigmoid Belief Net', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: 4, y: 9, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q1.</b> FVSBN on a 28×28 binary image ($n=784$): conditional $i$ is ',
+          '$\\sigma(\\alpha_0^i+\\sum_{j<i}\\alpha_j^i x_j)$, i.e. it has $i$ parameters. Total parameters = ',
+          { blank: true, ans: '307,720', w: 90, fs: 12, type: 'select',
+            options: ['784', '1,568', '307,720', '614,656'] },
+          ', which grows ',
+          { blank: true, ans: 'quadratically', w: 120, fs: 12, type: 'select',
+            options: ['linearly', 'quadratically', 'exponentially'] },
+          ' in $n$.'
+        ] },
+
+      { type: 'slider', x: 4, y: 26, w: 60, fs: 11.5,
+        question: '<b>Q2.</b> Given $\\hat x_1=0.6$, $\\hat x_2(x_1{=}1)=0.3$, $\\hat x_3(x_1{=}1,x_2{=}0)=0.8$, ' +
+                  'what is $p(X_1{=}1,X_2{=}0,X_3{=}1)$?',
+        min: 0, max: 1, step: 0.002, ans: 0.336, tol: 0.006, unit: '' },
+
+      { type: 'ordering', x: 4, y: 47, w: 60, fs: 11.5,
+        question: '<b>Q3.</b> Order the steps for <i>sampling</i> a 3-pixel image from an FVSBN:',
+        items: [
+          'Compute $\\hat x_3=\\sigma(\\alpha_0^3+\\alpha_1^3\\bar x_1+\\alpha_2^3\\bar x_2)$, then sample $\\bar x_3$',
+          'Sample $\\bar x_1 \\sim \\text{Bernoulli}(\\alpha^1)$',
+          'Sample $\\bar x_2 \\sim \\text{Bernoulli}(\\hat x_2)$',
+          'Compute $\\hat x_2=\\sigma(\\alpha_0^2+\\alpha_1^2\\bar x_1)$ using the sampled $\\bar x_1$'
+        ],
+        ans: [1, 3, 2, 0] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — 307,720; quadratic.</b><br>' +
+        '$\\sum_{i=1}^{n} i=\\tfrac{n(n+1)}{2}=\\tfrac{784\\cdot785}{2}\\approx \\tfrac{n^2}{2}$. ' +
+        'Sharing weights across conditionals (NADE) reduces this to $O(n)$.', 6),
+      mkBubble('<b>Q2 — 0.336.</b><br>' +
+        'Evaluation multiplies the conditionals: $\\hat x_1(1-\\hat x_2)\\,\\hat x_3=0.6\\times0.7\\times0.8=0.336$. ' +
+        'Use $1-\\hat x_i$ whenever the observed $x_i=0$.', 25),
+      mkBubble('<b>Q3 — $\\bar x_1$ → $\\hat x_2$ → $\\bar x_2$ → $\\hat x_3,\\bar x_3$.</b><br>' +
+        'Each $\\hat x_i$ needs the <i>sampled</i> values of all earlier pixels, so generation is inherently ' +
+        'sequential — the main reason AR sampling is slow.', 49)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 4 — NADE & output distributions   (medium)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'NADE & Output Distributions', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> What is the main motivation for NADE over FVSBN?',
+        choices: [
+          'FVSBN cannot compute likelihoods at all',
+          'Logistic conditionals are too weak; NADE adds a hidden layer with weights $W$ shared across conditionals',
+          'NADE removes the need for an ordering of the variables',
+          'NADE generates all pixels in parallel at sampling time'
+        ],
+        ans: 1 },
+
+      lbl(4, 36, '<b>Q2.</b> Match each data type to the output layer of its AR conditional:'),
+      { type: 'match', x: 4, y: 38.5, w: 520, fs: 10.5, opacity: 0,
+        dotSize: 12, dotGap: 8, colGap: 40,
+        left:  ['Binary pixel (0/1)', 'Pixel 0–255 / text token', 'Continuous audio sample'],
+        right: ['Softmax → Categorical', 'Mixture-of-Gaussians params', 'Sigmoid → Bernoulli'],
+        ans: [2, 0, 1] },
+
+      { type: 'cloze', x: 4, y: 59, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q3.</b> A NADE conditional for audio uses a mixture of $K=4$ Gaussians. With equal weights $1/K$ ',
+          '(as on the slide) the network outputs ',
+          { blank: true, ans: '8', w: 45, fs: 12 },
+          ' numbers per $x_i$; if the mixture weights are also learned it outputs ',
+          { blank: true, ans: '12', w: 45, fs: 12 },
+          '.'
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Hidden layer with shared $W$.</b><br>' +
+        'FVSBN conditionals are logistic regressions → poor fits. NADE: $\\mathbf h_i=\\sigma(W_{\\cdot,<i}\\mathbf x_{<i}+\\mathbf c)$, ' +
+        '$\\hat x_i=\\sigma(\\boldsymbol\\alpha_i\\mathbf h_i+b_i)$. Reusing $W$ gives $O(nd)$ parameters.', 8),
+      mkBubble('<b>Q2 —</b> binary → <b>sigmoid</b> (Bernoulli); 256 intensities or a vocabulary → <b>softmax</b> ' +
+        '(Categorical, as in LLMs); continuous audio → the network outputs <b>GMM parameters</b> $(\\mu^j,\\sigma^j)$.', 36),
+      mkBubble('<b>Q3 — 8 and 12.</b><br>' +
+        'Each Gaussian needs $\\mu$ and $\\sigma$: $2K=8$. Learned mixture weights add $K$ logits ' +
+        '(softmax-normalised): $3K=12$ outputs per $x_i$.', 59)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 5 — MADE   (medium → hard, diagram-based)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'MADE — Masked Autoencoder', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> How does MADE turn an autoencoder into an AR model?',
+        choices: [
+          'By adding noise to the inputs, as in a denoising AE',
+          'By multiplying the weight matrices with binary masks so $\\hat x_i$ depends only on earlier inputs',
+          'By training a separate network for every pixel'
+        ],
+        ans: 1 },
+
+      lbl(4, 32, '<b>Q2.</b> In the MADE network below, the numbers are the units’ ordering labels $m$.<br>' +
+                 'Click every <b>input</b> and <b>output</b> node that the highlighted hidden unit ($m=2$) may connect to.', 11),
+      { type: 'hotspot', x: 4, y: 39.5, w: 19, src: MADE_SVG,
+        spots: [
+          { x: 25, y: 80, r: 9 },  /* input x1 (3)        */
+          { x: 50, y: 80, r: 9 },  /* input x2 (1)        */
+          { x: 75, y: 80, r: 9 },  /* input x3 (2)        */
+          { x: 25, y: 20, r: 9 },  /* output p(x1|.) (3)  */
+          { x: 50, y: 20, r: 9 },  /* output p(x2)   (1)  */
+          { x: 75, y: 20, r: 9 }   /* output p(x3|.) (2)  */
+        ],
+        ans: [1, 2, 3] },
+
+      { type: 'cloze', x: 4, y: 76, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q3.</b> For $n$ pixels MADE needs ',
+          { blank: true, ans: '1', w: 50, fs: 12, type: 'select', options: ['1', '$n$'] },
+          ' pass(es) to evaluate $p(\\mathbf x)$ but ',
+          { blank: true, ans: '$n$', w: 50, fs: 12, type: 'select', options: ['1', '$n$'] },
+          ' to sample an image.'
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Binary masks.</b><br>' +
+        'MADE multiplies each weight matrix by a 0/1 mask ($M^{W^1},M^{W^2},M^{V}$), cutting every path that would let an ' +
+        'output see its own or later inputs — like the masked decoder of a Transformer.', 8),
+      mkBubble('<b>Q2 — inputs $x_2$ (1), $x_3$ (2) and output $p(x_1\\mid\\cdot)$ (3).</b><br>' +
+        'Hidden unit $m$ reads inputs with label $\\le m$; output $d$ reads hidden units with $m<d$ (strict). ' +
+        'So this unit never sees $x_1$ yet feeds $p(x_1\\mid x_2,x_3)$, as on the slide.', 33),
+      mkBubble('<b>Q3 — 1 pass vs $n$ passes.</b><br>' +
+        'With $\\mathbf x$ known, one masked pass yields all conditionals (fast training/evaluation). ' +
+        'Sampling feeds each new $\\bar x_i$ back in → $n$ sequential passes.', 62)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 6 — RNN, PixelRNN, PixelCNN   (medium → hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'RNN, PixelRNN & PixelCNN', maxTries: 3,
+    questions: [
+      lbl(4, 9, '<b>Q1.</b> Match each AR model to how its parameter count grows with the number of variables $n$:'),
+      { type: 'match', x: 4, y: 11.5, w: 540, fs: 10.5, opacity: 0,
+        dotSize: 12, dotGap: 8, colGap: 40,
+        left:  ['FVSBN', 'NADE (shared W)', 'RNN (hidden state h_t)'],
+        right: ['Constant (independent of n)', 'Quadratic, about n²/2', 'Linear, O(n)'],
+        ans: [1, 2, 0] },
+
+      { type: 'radio', x: 4, y: 31, w: 64, fs: 11.5,
+        question: '<b>Q2.</b> In PixelRNN, which conditional models the <i>blue</i> value of pixel $t$?',
+        choices: [
+          '$p(x_t^{B}\\mid \\mathbf x_{1:t-1})$',
+          '$p(x_t^{B}\\mid \\mathbf x_{1:t-1},\\,x_t^{R},\\,x_t^{G})$',
+          '$p(x_t^{B}\\mid x_t^{R},\\,x_t^{G})$'
+        ],
+        ans: 1 },
+
+      lbl(4, 55, '<b>Q3.</b> PixelCNN, raster order (left→right, top→bottom). Click every cell that a first-layer<br>' +
+                 '3×3 <b>mask-A</b> kernel may use when predicting the centre pixel ★:', 11),
+      { type: 'hotspot', x: 4, y: 62.5, w: 14, src: GRID_SVG,
+        spots: [
+          { x: 20, y: 20, r: 12 }, { x: 50, y: 20, r: 12 }, { x: 80, y: 20, r: 12 },
+          { x: 20, y: 50, r: 12 }, { x: 50, y: 50, r: 12 }, { x: 80, y: 50, r: 12 },
+          { x: 20, y: 80, r: 12 }, { x: 50, y: 80, r: 12 }, { x: 80, y: 80, r: 12 }
+        ],
+        ans: [0, 1, 2, 3] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — FVSBN quadratic, NADE linear, RNN constant.</b><br>' +
+        'FVSBN: $1+2+\\dots+n$. NADE reuses one $W$. An RNN applies the same cell ' +
+        'at every step, summarising the past in $h_t$.', 8),
+      mkBubble('<b>Q2 — past pixels + current red & green.</b><br>' +
+        'Inside a pixel the order is R → G → B; each channel is a 256-way categorical. Sampling makes ' +
+        'image completions stochastic — different completions each time.', 32),
+      mkBubble('<b>Q3 — the 3 cells above + the cell to the left.</b><br>' +
+        'Mask A = [1 1 1; 1 0 0; 0 0 0]. The centre is excluded in the first layer (it is the target!). ' +
+        'Later layers use mask B, which includes the centre, since those features already depend only on the past.', 58)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 7 — WaveNet & dilated convolutions   (hard, computation)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'WaveNet & Dilated Convs', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> What is the main benefit of <i>dilated</i> causal convolutions in WaveNet?',
+        choices: [
+          'They make the model bidirectional',
+          'The receptive field grows exponentially with depth, at only linear cost',
+          'They remove the need for causality / masking',
+          'They let WaveNet generate all audio samples in parallel'
+        ],
+        ans: 1 },
+
+      { type: 'cloze', x: 4, y: 37, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q2.</b> A causal conv stack has kernel size $k=2$ and dilations 1, 2, 4, 8 (one layer each). ',
+          'Receptive field = ',
+          { blank: true, ans: '16', w: 45, fs: 12 },
+          ' samples. The same 4 layers <i>without</i> dilation: ',
+          { blank: true, ans: '5', w: 45, fs: 12 },
+          ' samples.'
+        ] },
+
+      { type: 'cloze', x: 4, y: 54, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q3.</b> Dilations double each layer ($1,2,\\dots,2^{L-1}$, $k=2$), so the receptive field is $2^L$. ',
+          'To cover 1024 audio samples you need $L=$ ',
+          { blank: true, ans: '10', w: 45, fs: 12 },
+          ' layers, versus ',
+          { blank: true, ans: '1023', w: 70, fs: 12, type: 'select',
+            options: ['11', '512', '1023', '1024'] },
+          ' layers without dilation.'
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Exponential receptive field.</b><br>' +
+        'A dilated kernel skips $d-1$ samples between taps. Doubling $d$ every layer (1, 2, 4, …) doubles the receptive ' +
+        'field per layer at constant cost per layer. Generation is still sequential.', 8),
+      mkBubble('<b>Q2 — 16 and 5.</b><br>' +
+        '$RF = 1+\\sum_\\ell d_\\ell (k-1) = 1+(1+2+4+8)=16$. Without dilation each layer adds only $k-1=1$: $1+4=5$.', 36),
+      mkBubble('<b>Q3 — 10 vs 1023 layers.</b><br>' +
+        '$2^L\\ge1024 \\Rightarrow L=10$. Plain causal convs give $1+L\\ge1024 \\Rightarrow L=1023$. ' +
+        'This is why WaveNet stacks dilation blocks 1…512.', 55)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 8 — Attention, causal masking & parallelism   (hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Attention & Causal Masks', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> Compared with an RNN AR model, a Transformer decoder predicts $x_t$ using…',
+        choices: [
+          'only a single summary vector $h_{t-1}$',
+          'all previous hidden vectors (via attention), with future tokens masked',
+          'all tokens, past and future',
+          'a fixed window containing just the last two tokens'
+        ],
+        ans: 1 },
+
+      { type: 'cloze', x: 4, y: 37, w: 64, fs: 12, lineSpacing: 1.8,
+        parts: [
+          '<b>Q2.</b> Causal self-attention, sequence length $T=6$: query $i$ may attend to key $j$ only if $j$ ',
+          { blank: true, ans: '$\\le i$', w: 60, fs: 12, type: 'select',
+            options: ['$<i$', '$\\le i$', '$>i$', '$\\geq i$'] },
+          '. The number of allowed (query, key) pairs is ',
+          { blank: true, ans: '21', w: 45, fs: 12 },
+          '.'
+        ] },
+
+      { type: 'radio', x: 4, y: 54, w: 64, fs: 11.5,
+        question: '<b>Q3.</b> Why can AR <i>training</i> evaluate all conditionals in parallel, while <i>sampling</i> is sequential?',
+        choices: [
+          'Training uses a different, non-causal architecture',
+          'In training the true prefix $\\mathbf x_{<i}$ comes from the data (teacher forcing); in sampling it must first be generated',
+          'Sampling uses a larger learning rate',
+          'GPUs cannot run masked networks at inference time'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — All previous hidden vectors, future masked.</b><br>' +
+        'An RNN squeezes $\\mathbf x_{1:t-1}$ into one state $h_t$ (a bottleneck). Attention reads every past position ' +
+        'directly; future tokens are masked — the same idea as MADE’s masks.', 8),
+      mkBubble('<b>Q2 — $j\\le i$; 21 pairs.</b><br>' +
+        'The allowed pattern is lower-triangular incl. the diagonal: $T(T+1)/2=21$. ' +
+        'Disallowed scores are set to $-\\infty$ before the softmax.', 36),
+      mkBubble('<b>Q3 — Teacher forcing.</b><br>' +
+        'In training the true prefix is known, so every $p(x_i\\mid\\mathbf x_{<i})$ is computed at once (“compute all terms ' +
+        'in parallel”). At generation each value must be sampled before the next can be predicted.', 56)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 9 — Pros, cons & comparison   (medium)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Pros, Cons & Improvements', maxTries: 3,
+    questions: [
+      lbl(4, 8, '<b>Q1.</b> Classify each property of AR models as a Pro or a Con:'),
+      { type: 'match', x: 4, y: 10.5, w: 440, fs: 10, opacity: 0,
+        dotSize: 10, dotGap: 2, colGap: 60,
+        left:  ['Explicit likelihood p(x)', 'Easy to train (MLE)', 'Needs a fixed ordering',
+                'Sequential generation', 'Good sample quality', 'No natural latent features'],
+        right: ['<b>Pro</b>', '<b>Con</b>'],
+        ans: [0, 0, 1, 1, 0, 1] },
+
+      { type: 'checkbox', x: 4, y: 42, w: 64, fs: 11.5,
+        question: '<b>Q2.</b> Which techniques were listed for improving PixelCNN performance? (select all)',
+        choices: [
+          'Gated convolutional layers and short-cut connections',
+          'Removing the causal mask to see more context',
+          'Discretized logistic (mixture) loss',
+          'Multi-scale modelling'
+        ],
+        ans: [0, 2, 3] },
+
+      { type: 'cloze', x: 4, y: 67, w: 66, fs: 11.5, lineSpacing: 1.75,
+        parts: [
+          '<b>Q3.</b> True/False — (a) AR test log-likelihood is exact: ',
+          { blank: true, ans: 'True', w: 70, fs: 12, type: 'select', options: ['True', 'False'] },
+          ' (b) A vanilla AE is generative: ',
+          { blank: true, ans: 'False', w: 70, fs: 12, type: 'select', options: ['True', 'False'] },
+          '\\n(c) AR models give natural latent features for clustering: ',
+          { blank: true, ans: 'False', w: 70, fs: 12, type: 'select', options: ['True', 'False'] }
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Pros:</b> explicit likelihood, easy MLE training, good samples. ' +
+        '<b>Cons:</b> requires a fixed ordering, slow sequential generation, no natural latent features for unsupervised learning.', 8),
+      mkBubble('<b>Q2 — gated convs, short-cuts, discretized logistic loss, multi-scale</b> ' +
+        '(van den Oord 2016; Salimans 2017, PixelCNN++). Removing the mask breaks causality — the model would “cheat”.', 42),
+      mkBubble('<b>Q3 — True, False, False.</b><br>' +
+        'Likelihood = product of conditionals. A vanilla AE defines no $p(\\mathbf x)$ to sample from. ' +
+        'AR models have no latent code — VAEs and flows add one.', 66)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 10 — Beyond the slides: reasoning   (hardest)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Beyond the Slides', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 9, w: 64, fs: 11.5,
+        question: '<b>Q1.</b> A raster-order PixelCNN must complete the <i>top</i> half of an image given the <i>bottom</i> half. ' +
+                  'What is the core difficulty?',
+        choices: [
+          'Nothing — simply feed the bottom half into the model',
+          'It only provides $p(x_i\\mid\\mathbf x_{<i})$; conditioning on “future” pixels needs intractable marginalisation',
+          'PixelCNN cannot model colour images',
+          'The kernel is too small to see the bottom half'
+        ],
+        ans: 1 },
+
+      { type: 'slider', x: 4, y: 40, w: 60, fs: 11.5,
+        question: '<b>Q2.</b> An AR model assigns a 32×32 RGB test image $\\ln p(\\mathbf x)=-4258.6$ nats. ' +
+                  'Its NLL in <b>bits per dimension</b> is about…',
+        min: 0, max: 6, step: 0.05, ans: 2, tol: 0.06, unit: ' bits/dim' },
+
+      { type: 'cloze', x: 4, y: 57, w: 66, fs: 12, lineSpacing: 1.4,
+        parts: [
+          '<b>Q3.</b> The chain rule holds for <i>any</i> variable ordering. Explain why any ordering can model ' +
+          '$p(\\mathbf x)$ exactly in principle, yet the choice of ordering still matters in practice.\\n',
+          { blank: true, type: 'open', w: 540, h: 66, fs: 12,
+            placeholder: 'Write your answer here. It will be evaluated by AI…',
+            ans: 'The chain rule p(x)=prod_i p(x_i|x_<i) is an exact identity for every permutation of the variables, so if each ' +
+                 'conditional could be represented perfectly, any ordering would represent p(x) exactly. In practice the conditionals ' +
+                 'are approximated by networks with limited capacity, shared parameters and local context (e.g. convolutions), so an ' +
+                 'ordering that follows the natural structure of the data (time for audio/text, raster scan for images) makes the ' +
+                 'conditionals much easier to learn and gives better likelihood. The ordering also fixes which conditional queries ' +
+                 'are cheap (e.g. completing the bottom of an image is easy, the top is hard) and requires sequential generation in that order.' }
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — Conditioning on “future” pixels.</b><br>' +
+        'The model only gives $p(x_i\\mid\\mathbf x_{<i})$ in raster order; $p(\\text{top}\\mid\\text{bottom})$ requires ' +
+        'summing over all top-half completions. You need a different ordering (or many orderings, as MADE allows).', 8),
+      mkBubble('<b>Q2 — 2.0 bits/dim.</b><br>' +
+        'nats → bits: $4258.6/\\ln 2\\approx 6144$ bits. Dimensions: $32\\cdot32\\cdot3=3072$. ' +
+        '$6144/3072=2.0$.', 39),
+      mkBubble('<b>Q3 — Reference answer:</b> the chain rule is exact for every ordering, so perfect conditionals make any ' +
+        'ordering exact. Real conditionals have limited capacity, shared weights and local context, so an ordering that follows ' +
+        'the data (time, raster) is far easier to learn — and it fixes which conditionals are cheap to query.',
+        57)
+    ]
+  }
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+</body>
+</html>
