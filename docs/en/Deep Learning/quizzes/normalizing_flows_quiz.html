@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title></title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine stylesheet -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css" />
+</head>
+<body>
+
+<div id="header">Machine Learning — Normalizing Flow Models Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+/* ───────────────────────────────────────────────────────────────
+   Quiz configuration — based on "Normalizing flow models" (slides 72–105)
+   11 groups · 30 questions · easy → hard
+   ─────────────────────────────────────────────────────────────── */
+
+var VIDEO_ID = '';
+var BACKGROUND = {
+  enabled : true,
+  color   : '#ffffff',
+  autoPlay: false
+};
+
+var DEFAULT_TIME_GAP   = 4;
+var POST_QUIZ_DURATION = 10;
+
+var MOODLE = { enabled: false };
+
+/* ───────────────────────────────────────────────────────────────
+   Helpers
+   ─────────────────────────────────────────────────────────────── */
+var BUBBLE_DEFAULTS = {
+  style       : 'bubble',
+  tail        : 'left',
+  bg          : 'rgba(255,248,200,0.97)',
+  borderColor : '#d4a017',
+  color       : '#3a2e00',
+  fs          : 11,
+  padding     : 7,
+  borderRadius: 10,
+  lineSpacing : 1.4
+};
+
+/* Explanation bubble on the right side, at the level (y) of its question. */
+function mkBubble(text, y, opts) {
+  var b = { x: 69, y: y, w: 30, text: text };
+  for (var k in BUBBLE_DEFAULTS) b[k] = BUBBLE_DEFAULTS[k];
+  if (opts) for (var k2 in opts) b[k2] = opts[k2];
+  return b;
+}
+
+/* Left-aligned, wrapping question label (for match / numeric questions).
+   The interactive part is placed directly under it (no gap). */
+function lbl(x, y, html, wpx, fs) {
+  return {
+    type: 'label', x: x, y: y, fs: fs || 12,
+    text: '<div style="text-align:left;white-space:normal;width:' + (wpx || 540) +
+          'px;line-height:1.35">' + html + '</div>'
+  };
+}
+
+/* Numeric text-input answer (checked with tolerance). */
+function num(x, y, ans, tol) {
+  return { x: x, y: y, w: 95, ans: ans, tol: tol, fs: 14 };
+}
+
+/* Cloze dropdown blank */
+function sel(ans, options, w) {
+  return { blank: true, type: 'select', ans: ans, options: options, w: w || 120 };
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Figures (re-drawn from the slides as SVG)
+   ─────────────────────────────────────────────────────────────── */
+
+/* Slide 75 — change of variables, Z ~ U[0,2], X = 4Z */
+var COV_SVG =
+  '<svg width="430" height="84" viewBox="0 0 430 84" xmlns="http://www.w3.org/2000/svg" ' +
+  'style="display:block;margin-top:3px;font-family:sans-serif;font-size:10px">' +
+  '<line x1="28" y1="66" x2="150" y2="66" stroke="#333"/>' +
+  '<line x1="28" y1="8" x2="28" y2="66" stroke="#333"/>' +
+  '<rect x="28" y="36" width="56" height="30" fill="#bfdbfe" stroke="#1d4ed8"/>' +
+  '<text x="6" y="40">1/2</text>' +
+  '<text x="25" y="79">0</text><text x="53" y="79">1</text><text x="81" y="79">2</text>' +
+  '<text x="153" y="70">z</text><text x="34" y="14">p(z)</text>' +
+  '<line x1="172" y1="42" x2="226" y2="42" stroke="#2563eb" stroke-width="2"/>' +
+  '<polygon points="226,37 236,42 226,47" fill="#2563eb"/>' +
+  '<text x="180" y="34" font-size="11">x = 4z</text>' +
+  '<line x1="262" y1="66" x2="420" y2="66" stroke="#333"/>' +
+  '<line x1="262" y1="8" x2="262" y2="66" stroke="#333"/>' +
+  '<rect x="262" y="52" width="144" height="14" fill="#fde68a" stroke="#b45309"/>' +
+  '<text x="250" y="57" font-size="12" font-weight="bold">?</text>' +
+  '<text x="259" y="79">0</text><text x="331" y="79">4</text><text x="403" y="79">8</text>' +
+  '<text x="422" y="70">x</text><text x="268" y="14">p(x)</text>' +
+  '</svg>';
+
+/* Slides 82–84 — block structure of a coupling-layer Jacobian */
+var JAC_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="300" height="200">' +
+  '<rect width="300" height="200" fill="#1e293b"/>' +
+  '<text x="40" y="25" fill="#fbbf24" font-family="sans-serif" font-size="13" text-anchor="middle">J=∂x/∂z</text>' +
+  '<text x="135" y="25" fill="#e2e8f0" font-family="sans-serif" font-size="13" text-anchor="middle">z[1:d]</text>' +
+  '<text x="245" y="25" fill="#e2e8f0" font-family="sans-serif" font-size="13" text-anchor="middle">z[d+1:n]</text>' +
+  '<text x="40" y="82" fill="#e2e8f0" font-family="sans-serif" font-size="13" text-anchor="middle">x[1:d]</text>' +
+  '<text x="40" y="164" fill="#e2e8f0" font-family="sans-serif" font-size="13" text-anchor="middle">x[d+1:n]</text>' +
+  '<rect x="84" y="40" width="102" height="74" rx="4" fill="#334155" stroke="#94a3b8"/>' +
+  '<rect x="194" y="40" width="102" height="74" rx="4" fill="#334155" stroke="#94a3b8"/>' +
+  '<rect x="84" y="122" width="102" height="74" rx="4" fill="#334155" stroke="#94a3b8"/>' +
+  '<rect x="194" y="122" width="102" height="74" rx="4" fill="#334155" stroke="#94a3b8"/>' +
+  '<text x="135" y="88" fill="#cbd5e1" font-family="sans-serif" font-size="30" text-anchor="middle">A</text>' +
+  '<text x="245" y="88" fill="#cbd5e1" font-family="sans-serif" font-size="30" text-anchor="middle">B</text>' +
+  '<text x="135" y="170" fill="#cbd5e1" font-family="sans-serif" font-size="30" text-anchor="middle">C</text>' +
+  '<text x="245" y="170" fill="#cbd5e1" font-family="sans-serif" font-size="30" text-anchor="middle">D</text>' +
+  '</svg>';
+var JAC_SRC = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(JAC_SVG);
+
+/* ───────────────────────────────────────────────────────────────
+   GROUPS
+   ─────────────────────────────────────────────────────────────── */
+var GROUPS = [
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 1 — Why flows? Flow vs VAE   (easy)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Why flows? Flow vs VAE', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 10, w: 63, fs: 11,
+        question: '<b>Q1.</b> Slide 73 asks: “Can we design a latent variable model with tractable likelihoods?” Why is this the key question?',
+        choices: [
+          'AR models have intractable likelihoods, while VAEs have tractable ones',
+          'AR: tractable likelihood but no latent features; VAE: latent features but intractable $p(x)$',
+          'VAEs cannot generate new samples',
+          'We need a model that compresses $x$ into a lower-dimensional $z$'
+        ],
+        ans: 1 },
+
+      { type: 'checkbox', x: 4, y: 37, w: 63, fs: 11,
+        question: '<b>Q2.</b> Compared with a VAE (slides 74–80), select ALL statements that are TRUE for a normalizing flow:',
+        choices: [
+          '$x$ and $z$ must have the same dimension, so there is no compression',
+          'Given $z$, the sample $x=f_\\theta(z)$ is deterministic',
+          '$p_\\theta(x)$ is exact, so training is plain MLE (no ELBO)',
+          'An encoder network is needed to infer $z$ from $x$'
+        ],
+        ans: [0, 1, 2] },
+
+      { type: 'cloze', x: 4, y: 63, w: 64, fs: 12, lineSpacing: 1.7,
+        parts: [
+          '<b>Q3.</b> VAE: $p(x|z)=\\mathcal{N}(\\mu_\\theta(z),\\Sigma_\\theta(z))$, so $x|z$ is ',
+          sel('stochastic', ['stochastic', 'deterministic'], 95),
+          '; flow: $x=f_\\theta(z)$ is ',
+          sel('deterministic', ['stochastic', 'deterministic'], 95),
+          '.<br>$p_\\theta(x)$ in a VAE requires ',
+          sel('integrating over all z', ['integrating over all z', 'a single inverse pass', 'an adversarial discriminator'], 165),
+          '; a flow needs ',
+          sel('a single inverse pass', ['integrating over all z', 'a single inverse pass', 'an adversarial discriminator'], 165),
+          '.'
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — AR: tractable $p(x)$, no features; VAE: features, intractable $p(x)$.</b><br>' +
+        'Flows are latent-variable models whose $p(x)$ is exact (via an invertible map), so they can be trained by plain maximum likelihood.', 10),
+      mkBubble('<b>Q2 — same dimension, deterministic generation, exact MLE.</b><br>' +
+        'No encoder is needed: $z=f^{-1}(x)$ is computed exactly. The price: no compression, and $x$ is fully determined by $z$.', 36),
+      mkBubble('<b>Q3 — stochastic / deterministic; integrating over all z / a single inverse pass.</b><br>' +
+        'VAE: $p(x)=\\int p(x|z)p(z)dz$, hence the ELBO. Flow: each $x$ has a unique $z$ — no enumeration.', 62)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 2 — Change of variables, 1D (slide 75)   (easy → medium)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Change of variables (1D)', maxTries: 3,
+    questions: [
+      lbl(4, 10, '<b>Q1.</b> Slide 75 figure: $Z\\sim\\mathcal{U}[0,2]$ and $X=f(Z)=4Z$. What is the height $p_X(4)$? (decimal)' + COV_SVG, 560),
+      num(5, 32, 0.125, 0.003),
+
+      { type: 'radio', x: 4, y: 40, w: 63, fs: 11,
+        question: '<b>Q2.</b> A student writes $p_X(4)=p_Z(4/4)=1/2$. What is wrong?',
+        choices: [
+          'Nothing — densities are preserved by invertible maps',
+          'The factor $|h^{\\prime}(x)|=1/4$ is missing, so this “density” would integrate to 4',
+          'It should be $p_Z(16)$, because $h(4)=16$',
+          'Change of variables only holds for Gaussian $Z$'
+        ],
+        ans: 1 },
+
+      { type: 'slider', x: 4, y: 68, w: 60, fs: 12,
+        question: '<b>Q3.</b> New case: $Z\\sim\\mathcal{U}(0,1)$ and $X=Z^2$. What is $p_X(0.64)$?',
+        min: 0, max: 2, step: 0.005, ans: 0.625, tol: 0.01, unit: '' }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — $p_X(4)=1/8=0.125$.</b><br>' +
+        '$h(x)=x/4$, $|h^{\\prime}(x)|=1/4$, so $p_X(4)=p_Z(1)\\cdot\\tfrac14=\\tfrac12\\cdot\\tfrac14$. Check: $X\\sim\\mathcal{U}[0,8]$, whose height is $1/8$.', 10),
+      mkBubble('<b>Q2 — the $|h^{\\prime}(x)|$ factor is missing.</b><br>' +
+        'Only substituting $z=x/4$ inside $p_Z$ gives height 1/2 over a support of length 8: total mass 4. The Jacobian factor re-normalizes the stretched space.', 38),
+      mkBubble('<b>Q3 — 0.625.</b><br>' +
+        '$h(x)=\\sqrt{x}$, $h^{\\prime}(x)=\\frac{1}{2\\sqrt{x}}=\\frac{1}{1.6}$. Since $p_Z(0.8)=1$, $p_X(0.64)=0.625$. The naive answer 1 forgets the derivative.', 66)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 3 — Change of variables: new cases   (medium → hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Change of variables — new cases', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: 4, y: 10, w: 64, fs: 13, lineSpacing: 1.9,
+        parts: [
+          '<b>Q1.</b> $Z\\sim\\mathcal{U}(0,1)$ and $X=-\\ln Z$ (a decreasing map). For $x>0$, $p_X(x)=$ ',
+          sel('$e^{-x}$', ['$e^{-x}$', '$e^{x}$', '$1/x$', '$-\\ln x$'], 75),
+          ', so $X$ follows the ',
+          sel('Exponential(1)', ['Uniform(0,1)', 'Exponential(1)', 'Gaussian N(0,1)', 'Laplace(0,1)'], 140),
+          ' distribution.'
+        ] },
+
+      { type: 'slider', x: 4, y: 27, w: 60, fs: 12,
+        question: '<b>Q2.</b> Slide 75: $Z\\sim\\mathcal{U}[0,2]$ and $X=e^{Z}$ give $p_X(x)=\\frac{1}{2x}$ on $[1,e^2]$. What is $P(X\\le e)$?',
+        min: 0, max: 1, step: 0.01, ans: 0.5, tol: 0.01, unit: '' },
+
+      lbl(4, 51, '<b>Q3.</b> Affine flow $x=Az+b$ with $A=\\begin{pmatrix}2&1\\\\0&3\\end{pmatrix}$, $b=(1,-1)$, $z\\sim\\mathcal{N}(0,I_2)$.<br>' +
+        'Compute $\\log p_X(x)$ at $x=(4,2)$ (natural log, 2 decimals):', 560),
+      num(5, 64.5, -4.63, 0.02)
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — $e^{-x}$, i.e. Exponential(1).</b><br>' +
+        '$h(x)=e^{-x}$, so $|h^{\\prime}(x)|=e^{-x}$ and $p_Z=1$ on $(0,1)$. The derivative is negative here, which is why the formula takes the absolute value.', 10),
+      mkBubble('<b>Q2 — 0.5.</b><br>' +
+        '$\\int_1^e\\frac{dx}{2x}=\\frac12\\ln e=\\frac12$. Faster: $P(X\\le e)=P(Z\\le1)=\\frac12$. A bijection preserves probabilities of events; only densities pick up the Jacobian factor.', 29),
+      mkBubble('<b>Q3 — $\\approx-4.63$.</b><br>' +
+        'Solve $Az=x-b=(3,3)$: $z=(1,1)$. $\\log\\mathcal{N}(z;0,I)=-\\ln 2\\pi-1=-2.838$. $\\det A=6$, so subtract $\\ln6=1.792$: $-4.630$.', 53)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 4 — Multivariate change of variables & Jacobians
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Change of variables (general case)', maxTries: 3,
+    questions: [
+      { type: 'radio', x: 4, y: 10, w: 63, fs: 12,
+        question: '<b>Q1.</b> For an invertible flow $x=f(z)$ in $\\mathbb{R}^n$, which expression is correct (slide 76)?',
+        choices: [
+          '$p_X(x)=p_Z(f(x))\\,\\left|\\det \\frac{\\partial f}{\\partial z}\\right|$',
+          '$p_X(x)=p_Z(f^{-1}(x))\\left|\\det\\frac{\\partial f^{-1}(x)}{\\partial x}\\right|=p_Z(z)\\left|\\det\\frac{\\partial f(z)}{\\partial z}\\right|^{-1}$',
+          '$p_X(x)=p_Z(f^{-1}(x))$ — the density is preserved',
+          '$p_X(x)=p_Z(z)\\,\\det\\frac{\\partial f(z)}{\\partial z}$'
+        ],
+        ans: 1 },
+
+      lbl(4, 50, '<b>Q2.</b> Match each Jacobian fact (forward map $x=f(z)$) to its meaning:', 560),
+      { type: 'match', x: 4, y: 52, w: 540, fs: 11,
+        dotSize: 12, dotGap: 6, colGap: 40,
+        left:  ['$\\det J = 1$',
+                '$|\\det J| > 1$ at a point',
+                '$\\det(A^{-1})$',
+                'Jacobian of $f_2\\circ f_1$'],
+        right: ['$\\det(A)^{-1}$',
+                'Product of dets (log-dets add)',
+                'Volume preserving: $p_X(x)=p_Z(z)$',
+                'Volume expands, so density decreases'],
+        ans: [2, 3, 0, 1] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — the second option.</b><br>' +
+        'Conservation of mass $p(x)dx=p(z)dz$ in $n$-D: the volume factor is $|\\det J|$. $\\det(A^{-1})=\\det(A)^{-1}$ switches between inverse and forward Jacobians; the absolute value handles orientation flips.', 10),
+      mkBubble('<b>Q2.</b> det = 1 → volume preserving (NICE), $p_X=p_Z$. $|\\det J|>1$ → $f$ stretches space, diluting density. $\\det(A^{-1})=\\det(A)^{-1}$. Composition → product of determinants, so log-dets add over layers.', 50)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 5 — Efficient determinants, stacking, MintNet
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Efficient determinants', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: 4, y: 10, w: 64, fs: 12, lineSpacing: 1.85,
+        parts: [
+          '<b>Q1.</b> For a general $n\\times n$ Jacobian, computing $\\det J$ costs O(',
+          sel('$n^3$', ['$n$', '$n^2$', '$n^3$', '$\\log n$'], 65),
+          '). If each $x_i=f_i(z)$ depends only on $z_{\\le i}$, $J$ is ',
+          sel('lower triangular', ['lower triangular', 'upper triangular', 'orthogonal', 'symmetric'], 135),
+          ' and $\\det J$ is the product of its ',
+          sel('diagonal entries', ['diagonal entries', 'off-diagonal entries', 'eigenvectors', 'row sums'], 140),
+          ', costing O(',
+          sel('$n$', ['$n$', '$n^2$', '$n^3$', '$\\log n$'], 65),
+          ').'
+        ] },
+
+      { type: 'checkbox', x: 4, y: 33, w: 63, fs: 11,
+        question: '<b>Q2.</b> Slide 79 shows a Gaussian and a uniform warped by M = 1, 2, 10 planar flows. Select ALL true statements:',
+        choices: [
+          'The M = 10 panels show simple invertible layers composing into complex, multi-modal densities',
+          'A composition of invertible maps is itself invertible',
+          '$\\log p_X=\\log p_Z(z_0)-\\sum_m\\log|\\det J_{f_m}|$, i.e. log-dets add',
+          'Each layer must be volume preserving for the cascade to be valid'
+        ],
+        ans: [0, 1, 2] },
+
+      { type: 'checkbox', x: 4, y: 62, w: 63, fs: 11,
+        question: '<b>Q3.</b> MintNet (slide 93) builds invertible CNNs. Select ALL true statements:',
+        choices: [
+          'Masked convolutions (as in PixelCNN) make the Jacobian triangular',
+          'Strictly positive diagonal Jacobian entries guarantee invertibility',
+          'Its inverse is computed in closed form in a single pass',
+          'Masking shrinks each filter\u2019s effective receptive field'
+        ],
+        ans: [0, 1, 3] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — $n^3$; lower triangular; diagonal entries; $n$.</b><br>' +
+        '$\\partial x_i/\\partial z_j=0$ for $j>i$, so the upper triangle vanishes (slide 80). This AR-style dependence is the trick behind NICE, MAF, IAF and MintNet.', 10),
+      mkBubble('<b>Q2 — the first three.</b><br>' +
+        'Invertible ∘ invertible is invertible, and log-dets add. Individual layers need not preserve volume (planar flows do not); each det must only be tractable and non-zero.', 35),
+      mkBubble('<b>Q3 — masking, positive diagonal, smaller receptive field.</b><br>' +
+        'MintNet has no closed-form inverse: it uses a parallel fixed-point iteration. Masks hide “future” pixels, as in PixelCNN.', 63)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 6 — Coupling layers: Jacobian structure (diagram)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Coupling layers: Jacobian structure', maxTries: 3,
+    questions: [
+      { type: 'hotspot', x: 4, y: 10, w: 32, fs: 11,
+        question: '<b>Q1.</b> Real-NVP Jacobian $J=\\partial x/\\partial z$ in blocks A–D. Click ALL blocks whose determinants give $\\det J$.',
+        src: JAC_SRC, alt: 'Jacobian block diagram',
+        spots: [
+          { x: 45.0, y: 42.5, r: 13, label: 'A' },
+          { x: 81.7, y: 42.5, r: 13, label: 'B' },
+          { x: 45.0, y: 83.5, r: 13, label: 'C' },
+          { x: 81.7, y: 83.5, r: 13, label: 'D' }
+        ],
+        ans: [0, 3] },
+
+      { type: 'cloze', x: 4, y: 61, w: 64, fs: 12, lineSpacing: 1.9,
+        parts: [
+          '<b>Q2.</b> For Real-NVP, block A $=$ ',
+          sel('$I_d$', ['$I_d$', '$0$', '$\\mathrm{diag}(e^{\\alpha_\\theta(z_{1:d})})$', '$I_{n-d}$', '$\\partial x_{d+1:n}/\\partial z_{1:d}$'], 135),
+          ', block B $=$ ',
+          sel('$0$', ['$I_d$', '$0$', '$\\mathrm{diag}(e^{\\alpha_\\theta(z_{1:d})})$', '$I_{n-d}$', '$\\partial x_{d+1:n}/\\partial z_{1:d}$'], 135),
+          ', block D $=$ ',
+          sel('$\\mathrm{diag}(e^{\\alpha_\\theta(z_{1:d})})$', ['$I_d$', '$0$', '$\\mathrm{diag}(e^{\\alpha_\\theta(z_{1:d})})$', '$I_{n-d}$', '$\\partial x_{d+1:n}/\\partial z_{1:d}$'], 135),
+          '.<br>For NICE (additive coupling), block D $=$ ',
+          sel('$I_{n-d}$', ['$I_d$', '$0$', '$\\mathrm{diag}(e^{\\alpha_\\theta(z_{1:d})})$', '$I_{n-d}$', '$\\partial x_{d+1:n}/\\partial z_{1:d}$'], 135),
+          ', hence $\\det J=$ ',
+          sel('$1$', ['$0$', '$1$', '$\\prod_i s_i$', '$e^{\\sum_i\\alpha_i}$'], 80),
+          '.'
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — A and D (the diagonal blocks).</b><br>' +
+        'Block B is 0, so $J$ is block lower-triangular and $\\det J=\\det A\\cdot\\det D$. Block C (derivatives through the networks) never has to be computed.', 12),
+      mkBubble('<b>Q2 — $I_d$, $0$, $\\mathrm{diag}(e^{\\alpha})$; NICE: $I_{n-d}$, det = 1.</b><br>' +
+        '$x_{1:d}=z_{1:d}$ gives the identity and ignores $z_{d+1:n}$ (zero block). NICE only shifts, so it preserves volume; Real-NVP has $\\log|\\det J|=\\sum\\alpha$.', 59)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 7 — Coupling layers: computations & design   (medium → hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'NICE & Real-NVP — computations', maxTries: 3,
+    questions: [
+      lbl(4, 10, '<b>Q1.</b> A 2-D NICE layer: $x_1=z_1,\\;x_2=z_2+z_1^2$, with $z\\sim\\mathcal{N}(0,I)$.<br>' +
+        'Compute $\\log p_X(x)$ at $x=(1,3)$ (natural log, 2 decimals):', 560),
+      num(5, 18, -4.34, 0.02),
+
+      lbl(4, 28, '<b>Q2.</b> Real-NVP with $n=4$, $d=2$, $z=(1,-1,0.5,2)$: $x_{3:4}=z_{3:4}\\odot e^{\\alpha}+\\mu$, where ' +
+        '$\\alpha=(0.5z_1,\\,z_2)$ and $\\mu=(z_1z_2,\\,1)$.<br>Compute $x_3$ (2 decimals):', 560),
+      num(5, 39.5, -0.18, 0.01),
+
+      { type: 'radio', x: 4, y: 51, w: 63, fs: 11,
+        question: '<b>Q3.</b> What would break if Real-NVP used $x_{d+1:n}=z_{d+1:n}\\odot\\alpha_\\theta(z_{1:d})+\\mu_\\theta(z_{1:d})$ (no exp)?',
+        choices: [
+          'Nothing — exp is only a numerical convenience',
+          'Where an entry of $\\alpha_\\theta$ crosses 0, the map is not invertible (det = 0, log-det = −∞)',
+          'The inverse would require inverting the network $\\alpha_\\theta$ itself',
+          'The Jacobian would no longer be triangular'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — $\\approx-4.34$.</b><br>' +
+        'Invert: $z_1=1$, $z_2=3-1^2=2$. det = 1 (volume preserving), so $\\log p_X=-\\ln2\\pi-\\tfrac12(1+4)=-1.838-2.5=-4.338$.', 10),
+      mkBubble('<b>Q2 — $x_3\\approx-0.18$.</b><br>' +
+        '$\\alpha=(0.5,-1)$, $\\mu=(-1,1)$: $x_3=0.5e^{0.5}-1=-0.176$, $x_4=2e^{-1}+1=1.736$. $\\log|\\det J|=\\sum\\alpha=-0.5$: this layer contracts volume here.', 31),
+      mkBubble('<b>Q3 — invertibility breaks where $\\alpha=0$.</b><br>' +
+        'A continuous network that changes sign must hit 0, collapsing the map; $\\log|\\alpha|$ gradients also explode. $e^{\\alpha}>0$ always, and $\\log\\det=\\sum\\alpha$ stays simple.', 55)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 8 — MAF vs IAF   (medium → hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Autoregressive flows: MAF vs IAF', maxTries: 3,
+    questions: [
+      lbl(4, 10, '<b>Q1.</b> For data dimension $D$, match each operation to its cost (slides 86–90):', 560),
+      { type: 'match', x: 4, y: 14, w: 520, fs: 11,
+        dotSize: 12, dotGap: 5, colGap: 40,
+        left:  ['MAF: density of an external x',
+                'MAF: drawing a sample',
+                'IAF: drawing a sample',
+                'IAF: density of an external x',
+                'IAF: density of its own sample'],
+        right: ['Parallel: one pass',
+                'Sequential: D passes'],
+        ans: [0, 1, 0, 1, 0] },
+
+      lbl(4, 43, '<b>Q2.</b> 2-D MAF: $x_i=z_ie^{\\alpha_i}+\\mu_i$ with $\\mu_1=\\alpha_1=0$, $\\mu_2=x_1$, $\\alpha_2=0.5x_1$, base $\\mathcal{N}(0,I)$.<br>' +
+        'Compute $\\log p_X(2,3)$ (natural log, 2 decimals):', 560),
+      num(5, 51, -4.91, 0.02),
+
+      { type: 'radio', x: 4, y: 61, w: 63, fs: 11,
+        question: '<b>Q3.</b> Slide 88: a 1-layer MAF fails on the cross-shaped density, but 5 layers succeed. Why does one affine layer fail?',
+        choices: [
+          'Its networks for $\\mu,\\alpha$ are too small to be accurate',
+          'It makes $x_1$ Gaussian and every $p(x_2|x_1)$ Gaussian — a cross is not',
+          'MAF cannot model 2-D data',
+          'Its Jacobian is not triangular, so training is unstable'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1.</b> MAF: $\\mu,\\alpha$ depend on $x$, so any density takes one parallel (MADE) pass, but sampling is sequential. IAF: $\\mu,\\alpha$ depend on $z$, so sampling is parallel; external $x$ needs $D$ steps, but its own samples are cheap (cached $z$).', 10),
+      mkBubble('<b>Q2 — $\\approx-4.91$.</b><br>' +
+        'All $\\mu,\\alpha$ come from $x$ at once: $z_1=2$, $z_2=(3-2)e^{-1}=0.368$, $\\log|\\det\\partial z/\\partial x|=-\\sum\\alpha_i=-1$. Total: $-2.919-0.987-1=-4.906$.', 41),
+      mkBubble('<b>Q3 — one affine layer gives Gaussian conditionals.</b><br>' +
+        'A cross has non-Gaussian slices. Stacking 5 layers with different orderings warps space enough; then the samples of $f^{-1}(x)$ look Gaussian.', 64)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 9 — Choosing a flow & Parallel WaveNet   (hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Choosing a flow & Parallel WaveNet', maxTries: 3,
+    questions: [
+      lbl(4, 10, '<b>Q1.</b> Choose the most suitable flow for each application:', 560),
+      { type: 'match', x: 4, y: 14, w: 560, fs: 11,
+        dotSize: 12, dotGap: 6, colGap: 40,
+        left:  ['Anomaly detection: score many data points',
+                'Train on audio by MLE, then real-time TTS',
+                'Variational posterior q(z|x) in a VAE',
+                'Density-estimation benchmark (test NLL)'],
+        right: ['MAF',
+                'IAF',
+                'MAF teacher → IAF student'],
+        ans: [0, 2, 1, 0] },
+
+      { type: 'radio', x: 4, y: 42, w: 63, fs: 11,
+        question: '<b>Q2.</b> Parallel WaveNet trains the IAF student with $D_{KL}(s\\|t)=\\mathbb{E}_{x\\sim s}[\\log s(x)-\\log t(x)]$. Why this direction rather than $D_{KL}(t\\|s)$?',
+        choices: [
+          'KL is symmetric, so the direction does not matter',
+          'All its terms are cheap: parallel IAF samples, IAF density of its own samples, parallel teacher scoring',
+          'It does not need the teacher model at all',
+          '$D_{KL}(t\\|s)$ is always zero once the teacher is trained'
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1.</b> Scoring many points and likelihood benchmarks need fast density, so MAF. A VAE posterior needs only samples plus their own densities, so IAF. Train by MLE and deploy fast: distil a MAF teacher into an IAF student (Parallel WaveNet).', 10),
+      mkBubble('<b>Q2 — every term of $D_{KL}(s\\|t)$ is cheap.</b><br>' +
+        'IAF samples are parallel, $\\log s$ of its own samples uses cached $z$, and $\\log t$ comes from the parallel teacher. $D_{KL}(t\\|s)$ needs slow teacher sampling and IAF scoring of external points. The $-H(s)$ term also prevents mode collapse.', 42)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 10 — Gaussianization flows   (medium → hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Gaussianization flows', maxTries: 3,
+    questions: [
+      { type: 'ordering', x: 4, y: 10, w: 60, fs: 11,
+        question: '<b>Q1.</b> Order one pass of a Gaussianization flow (slides 96–100):',
+        items: [
+          'Apply a rotation (orthogonal matrix) to mix dimensions',
+          'Map each $u_i$ through $\\Phi^{-1}$ → marginally $\\mathcal{N}(0,1)$',
+          'Estimate each dimension\u2019s marginal CDF $F_i$ (e.g. KDE)',
+          'Repeat both steps until the data is jointly $\\mathcal{N}(0,I)$',
+          'Compute $u_i=F_i(x_i)$ → each coordinate $\\sim\\mathcal{U}[0,1]$'
+        ],
+        ans: [2, 4, 1, 0, 3] },
+
+      lbl(4, 53.5, '<b>Q2.</b> Gaussianize $X\\sim\\text{Exp}(1)$, $F(x)=1-e^{-x}$, via $z=\\Phi^{-1}(F(x))$. Find $z$ at $x=\\ln 4$ (2 decimals):', 560),
+      num(5, 58.5, 0.67, 0.01),
+
+      { type: 'slider', x: 4, y: 67, w: 62, fs: 11,
+        question: '<b>Q3.</b> $x\\sim\\mathcal{N}(0,\\Sigma)$, unit variances, correlation $\\rho=0.6$, so $D_{KL}(p\\|\\mathcal{N}(0,I))=-\\tfrac12\\ln\\det\\Sigma$. ' +
+          'Using slide 97\u2019s split $D_{KL}=I(x)+J_m(x)$, what is the multi-information $I(x)$?',
+        min: 0, max: 1, step: 0.001, ans: 0.223, tol: 0.005, unit: '' }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1 — CDF → uniform → $\\Phi^{-1}$ → rotate → repeat.</b><br>' +
+        '$\\Phi^{-1}\\circ F_{data}$ Gaussianizes each marginal (diagonal Jacobian); the rotation ($|\\det|=1$) mixes dimensions so the next pass removes remaining dependence.', 10),
+      mkBubble('<b>Q2 — $z\\approx0.67$.</b><br>' +
+        '$F(\\ln4)=0.75$ and $\\Phi^{-1}(0.75)=0.674$, the upper quartile of N(0,1). $F(X)$ is uniform; $\\Phi^{-1}$ makes it Gaussian.', 44),
+      mkBubble('<b>Q3 — $I(x)\\approx0.223$.</b><br>' +
+        'Marginals are N(0,1), so $J_m=0$: $I=-\\tfrac12\\ln0.64=0.223$. Rotating to the eigenbasis gives $I=0$, $J_m=0.223$ (variances 1.6, 0.4), removed by the next marginal step.', 64)
+    ]
+  },
+
+  /* ════════════════════════════════════════════════════════════
+     GROUP 11 — Flows in context & open-ended questions   (hard)
+     ════════════════════════════════════════════════════════════ */
+  {
+    label: 'Flows in context — open questions', maxTries: 3,
+    questions: [
+      lbl(4, 10, '<b>Q1.</b> Match each generative model to its training objective (slides 102–103):', 560),
+      { type: 'match', x: 4, y: 14, w: 560, fs: 11,
+        dotSize: 12, dotGap: 6, colGap: 40,
+        left:  ['GAN', 'VAE', 'Normalizing flow', 'Autoregressive model'],
+        right: ['Exact likelihood via change of variables',
+                'Adversarial minimax game',
+                'ELBO (a lower bound)',
+                'Exact likelihood via chain rule (ordering)'],
+        ans: [1, 2, 0, 3] },
+
+      { type: 'cloze', x: 4, y: 38, w: 64, fs: 12, lineSpacing: 1.4,
+        parts: [
+          '<b>Q2.</b> A colleague proposes a flow from a 16-D Gaussian latent to 784-pixel MNIST images “to get a compressed code”. Is it a valid flow? Explain and suggest an alternative.<br>',
+          { blank: true, type: 'open', w: 540, h: 55, fs: 12,
+            placeholder: 'Write your answer here. It will be evaluated by AI…',
+            ans: 'Not a valid flow. A flow must be a bijection (diffeomorphism) between spaces of the same dimension; a 16→784 map only covers a 16-dimensional manifold, its Jacobian is non-square so the change-of-variables determinant is undefined, and the density in R^784 is degenerate. Flows do not compress. Alternatives: a VAE (possibly with a flow prior or flow posterior), an autoencoder with a flow on its latent space, or a multi-scale flow (RealNVP/Glow) that factors out dimensions but keeps 784 latent dimensions in total.' }
+        ] },
+
+      { type: 'cloze', x: 4, y: 62, w: 64, fs: 12, lineSpacing: 1.4,
+        parts: [
+          '<b>Q3.</b> Why can\u2019t a layer $x=\\mathrm{ReLU}(Wz)$ be used in a flow, even with an invertible $W$? Propose a fix.<br>',
+          { blank: true, type: 'open', w: 540, h: 55, fs: 12,
+            placeholder: 'Write your answer here. It will be evaluated by AI…',
+            ans: 'ReLU is not injective: every negative pre-activation is mapped to 0, so the layer is not invertible; those Jacobian diagonal entries are 0, so det J = 0 and log|det J| = -infinity, and probability mass collapses onto a lower-dimensional set. Fix: use a strictly monotone activation such as leaky ReLU with slope a > 0 (log|det| = log|det W| + (number of negative units)·log a), or use coupling / autoregressive layers.' }
+        ] }
+    ],
+    bubbles: [
+      mkBubble('<b>Q1.</b> GAN: adversarial game, no likelihood. VAE: ELBO, a lower bound. Flow: exact $\\log p(x)$ via change of variables (train $G^{-1}$, generate with $G$). AR: exact likelihood via the chain rule, but needs an ordering and samples slowly.', 10),
+      mkBubble('<b>Q2 — not valid.</b><br>' +
+        'A flow is a bijection between equal dimensions. A 16→784 map covers only a 16-D manifold, $J$ is non-square and the density in $\\mathbb{R}^{784}$ is degenerate. Flows do not compress; use a VAE (with a flow prior), or an AE + flow on its latent.', 34),
+      mkBubble('<b>Q3 — ReLU is not injective.</b><br>' +
+        'Negative inputs all map to 0: no inverse, zero diagonal Jacobian entries, $\\det=0$, log-det $=-\\infty$. Fix: leaky ReLU (slope $a>0$), which adds $(\\#\\text{neg})\\ln a$ to the log-det, or use coupling / AR layers.', 59)
+    ]
+  }
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  /* Wait for KaTeX to be ready, then load the engine */
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+</body>
+</html>
