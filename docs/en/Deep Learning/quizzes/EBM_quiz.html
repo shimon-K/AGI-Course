@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Energy-Based Models Quiz</title>
+
+  <!-- KaTeX for LaTeX rendering -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+
+  <!-- Quiz engine stylesheet -->
+  <link rel="stylesheet" href="youtube-quiz-engine.css" />
+</head>
+<body>
+
+<div id="header">Machine Learning — Energy-Based Models (EBMs) Quiz</div>
+
+<div id="quiz-frame">
+  <div id="video-wrap">
+    <iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+/* ───────────────────────────────────────────────────────────────
+   Quiz configuration — "Energy-Based Models" (slides 143–167):
+   EBM vs GAN, normalisation, EBM form, Z-free applications,
+   Product of Experts, Hopfield/BM/RBM, RBM training, contrastive
+   divergence, MCMC, Langevin, score matching, NCE, FCE,
+   adversarial training of EBMs.
+   ─────────────────────────────────────────────────────────────── */
+
+var VIDEO_ID = '';
+var BACKGROUND = {
+  enabled : true,
+  color   : '#ffffff',
+  autoPlay: false
+};
+
+var DEFAULT_TIME_GAP   = 4;
+var POST_QUIZ_DURATION = 10;
+
+var MOODLE = { enabled: false };
+
+/* ───────────────────────────────────────────────────────────────
+   Layout conventions
+   QX / QW : left column for questions (label + widget, no gap)
+   BX / BW : right column for explanation bubbles (same y-level)
+   ─────────────────────────────────────────────────────────────── */
+var QX = 3,  QW = 63,
+    BX = 69, BW = 29;
+
+var BUBBLE_DEFAULTS = {
+  style       : 'bubble',
+  tail        : 'left',
+  tailSize    : 10,
+  bg          : 'rgba(255,248,200,0.97)',
+  borderColor : '#d4a017',
+  color       : '#3a2e00',
+  fs          : 10.5,
+  padding     : 7,
+  borderRadius: 9,
+  lineSpacing : 1.4
+};
+
+function mkBubble(text, y, opts) {
+  var b = { x: BX, y: y, w: BW, text: text };
+  for (var k in BUBBLE_DEFAULTS) b[k] = BUBBLE_DEFAULTS[k];
+  if (opts) for (var k2 in opts) b[k2] = opts[k2];
+  return b;
+}
+
+function lbl(y, text, fs) {
+  return { type: 'label', x: QX + 1, y: y, fs: fs || 11.5, text: text };
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Inline SVG diagrams (used by the hotspot questions)
+   ─────────────────────────────────────────────────────────────── */
+function svgURI(s) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s); }
+
+/* Three graphs: A = Hopfield, B = RBM, C = full Boltzmann machine */
+var BM_SVG = (function () {
+  var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">' +
+          '<rect width="600" height="200" fill="#ffffff"/>';
+  function line(a, b) {
+    s += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] +
+         '" stroke="#6fa8dc" stroke-width="1.5"/>';
+  }
+  function node(p, hid) {
+    s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="' + (hid ? '#f28b82' : '#d6d6d6') +
+         '" stroke="' + (hid ? '#b03a2e' : '#777') + '" stroke-width="1.5"/>';
+  }
+  function allPairs(P) { for (var i = 0; i < P.length; i++) for (var j = i + 1; j < P.length; j++) line(P[i], P[j]); }
+  function guide(cx) {
+    s += '<ellipse cx="' + cx + '" cy="96" rx="96" ry="32" fill="none" stroke="#999" stroke-width="1.2" stroke-dasharray="5 4"/>';
+  }
+  function letter(cx, t) {
+    s += '<text x="' + cx + '" y="190" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#222">' + t + '</text>';
+  }
+  /* A — Hopfield: visible only, fully connected */
+  var A = [];
+  for (var i = 0; i < 5; i++) {
+    var a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+    A.push([100 + 50 * Math.cos(a), 98 + 44 * Math.sin(a)]);
+  }
+  allPairs(A);
+  /* B — RBM: bipartite only */
+  var BH = [[250, 60], [300, 60], [350, 60]], BV = [[240, 135], [280, 135], [320, 135], [360, 135]];
+  BH.forEach(function (h) { BV.forEach(function (v) { line(h, v); }); });
+  /* C — Boltzmann machine: all pairs */
+  var CH = [[450, 60], [500, 60], [550, 60]], CV = [[440, 135], [480, 135], [520, 135], [560, 135]];
+  allPairs(CH.concat(CV));
+  A.forEach(function (p) { node(p, false); });
+  BH.forEach(function (p) { node(p, true); });  BV.forEach(function (p) { node(p, false); });
+  CH.forEach(function (p) { node(p, true); });  CV.forEach(function (p) { node(p, false); });
+  guide(100); guide(300); guide(500);
+  letter(100, 'A'); letter(300, 'B'); letter(500, 'C');
+  s += '</svg>';
+  return svgURI(s);
+})();
+
+/* Energy landscape before a CD update */
+var ENERGY_SVG = (function () {
+  var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 230" width="600" height="230">' +
+          '<rect width="600" height="230" fill="#ffffff"/>' +
+          '<line x1="50" y1="212" x2="585" y2="212" stroke="#333" stroke-width="2"/>' +
+          '<polygon points="585,207 595,212 585,217" fill="#333"/>' +
+          '<line x1="50" y1="212" x2="50" y2="14" stroke="#333" stroke-width="2"/>' +
+          '<polygon points="45,14 50,4 55,14" fill="#333"/>' +
+          '<text x="60" y="20" font-family="Arial" font-size="14" fill="#333">energy  E\u03b8(x) = \u2212f\u03b8(x)</text>' +
+          '<text x="575" y="228" font-family="Arial" font-size="14" fill="#333">x</text>' +
+          '<path d="M60,45 C110,45 140,105 190,110 C240,115 255,80 300,85 C350,92 370,185 420,185 C470,185 520,60 575,40" ' +
+          'fill="none" stroke="#1f4e79" stroke-width="3"/>' +
+          /* guide ellipses (= click targets) */
+          '<ellipse cx="190" cy="110" rx="30" ry="11.5" fill="none" stroke="#999" stroke-dasharray="4 3"/>' +
+          '<ellipse cx="300" cy="85"  rx="30" ry="11.5" fill="none" stroke="#999" stroke-dasharray="4 3"/>' +
+          '<ellipse cx="420" cy="185" rx="30" ry="11.5" fill="none" stroke="#999" stroke-dasharray="4 3"/>' +
+          /* points */
+          '<circle cx="190" cy="110" r="6" fill="#27ae60"/>' +
+          '<circle cx="300" cy="85"  r="6" fill="#7f8c8d"/>' +
+          '<circle cx="420" cy="185" r="6" fill="#c0392b"/>' +
+          '<text x="105" y="145" font-family="Arial" font-size="14" font-weight="bold" fill="#1e7a45">A: x_train (data)</text>' +
+          '<text x="290" y="64"  font-family="Arial" font-size="14" font-weight="bold" fill="#555">C</text>' +
+          '<text x="452" y="204" font-family="Arial" font-size="14" font-weight="bold" fill="#a93226">B: x_sample \u223c p\u03b8</text>' +
+          '</svg>';
+  return svgURI(s);
+})();
+
+/* ───────────────────────────────────────────────────────────────
+   GROUPS
+   ─────────────────────────────────────────────────────────────── */
+var GROUPS = [
+
+  /* ════════════════ 1. EBM vs GAN ════════════════ */
+  {
+    label: 'EBMs vs. GANs — motivation', maxTries: 3,
+    questions: [
+      { type: 'radio', x: QX, y: 10, w: QW, fs: 12,
+        question: "<b>Q1.</b> Which of the following is <u>not</u> listed as an advantage of EBMs in the EBM-vs-GAN comparison?",
+        choices: [
+          "Very flexible model architectures",
+          "Stable training (no adversarial minimax game)",
+          "The exact likelihood $p_\\theta(\\mathbf x)$ can be evaluated cheaply",
+          "Flexible composition of several models"
+        ],
+        ans: 2 },
+      { type: 'radio', x: QX, y: 42, w: QW, fs: 12,
+        question: "<b>Q2.</b> Why can an EBM be trained with maximum-likelihood-style objectives, while a vanilla GAN cannot?",
+        choices: [
+          "An EBM specifies an explicit (un-normalised) density, so $\\log p_\\theta=f_\\theta-\\log Z(\\theta)$ is defined; a GAN only defines an implicit sampler $\\mathbf x=G_\\theta(\\mathbf z)$",
+          "An EBM contains no neural network, so its likelihood is trivially available",
+          "A GAN generator is always normalised, so maximising its likelihood is meaningless",
+          "EBMs are trained with a discriminator and a minimax game, exactly like GANs"
+        ],
+        ans: 0 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1 — cheap exact likelihood.</b><br>Evaluating $p_\\theta(\\mathbf x)$ requires $Z(\\theta)=\\int e^{f_\\theta(\\mathbf x)}d\\mathbf x$, intractable in high dimension. The slide lists for EBMs: flexible architectures, stable training, relatively high sample quality, flexible composition. For GANs: intractable likelihood, unstable training, hard evaluation, mode collapse.", 9),
+      mkBubble("<b>Q2 — explicit vs. implicit model.</b><br>$\\log p_\\theta(\\mathbf x)=f_\\theta(\\mathbf x)-\\log Z(\\theta)$: the first term is known; only $∇_\\theta\\log Z$ must be approximated (MCMC / contrastive divergence) or sidestepped (score matching, NCE). A GAN generator has no density formula, so it is trained through a two-sample test (the discriminator). Having a genuine probabilistic model is also what links EBMs to score-based diffusion models.", 44)
+    ]
+  },
+
+  /* ════════════════ 2. Normalisation & Z ════════════════ */
+  {
+    label: 'Normalisation & partition fn.', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2,
+        parts: [
+          "<b>Q1.</b> For $g_\\lambda(x)=e^{-\\lambda x}$ on $[0,\\infty)$ with $\\lambda=4$, the volume is $Z=$ ",
+          { blank: true, ans: '0.25', w: 60 },
+          " (decimal), hence the normalised density is $p(x)=$ ",
+          { blank: true, ans: "$4e^{-4x}$", w: 105, type: 'select',
+            options: ["$\\tfrac14 e^{-4x}$", "$4e^{-4x}$", "$e^{-4x}$", "$e^{-x/4}$"] },
+          "."
+        ] },
+      { type: 'slider', x: QX, y: 24, w: QW, fs: 12,
+        question: "<b>Q2.</b> For the un-normalised Gaussian $g(x)=e^{-(x-\\mu)^2/2\\sigma^2}$ with $\\sigma^2=2$, what is the volume $Z$?",
+        min: 0, max: 6, step: 0.05, ans: 3.55, tol: 0.1, unit: '' },
+      { type: 'checkbox', x: QX, y: 45, w: QW, fs: 11.5,
+        question: "<b>Q3.</b> Given normalised densities $p_\\theta, p_{\\theta'}$, which constructions are <u>automatically</u> normalised (no new $Z$ needed)? (select all)",
+        choices: [
+          "Autoregressive product $p_\\theta(\\mathbf x)\\,p_{\\theta'(\\mathbf x)}(\\mathbf y)$ over $(\\mathbf x,\\mathbf y)$",
+          "Mixture $\\alpha\\,p_\\theta(\\mathbf x)+(1-\\alpha)\\,p_{\\theta'}(\\mathbf x)$ with $\\alpha\\in[0,1]$",
+          "Product $p_\\theta(\\mathbf x)\\,p_{\\theta'}(\\mathbf x)$ over the same variable $\\mathbf x$",
+          "Mixture $0.7\\,p_\\theta(\\mathbf x)+0.5\\,p_{\\theta'}(\\mathbf x)$",
+          "$\\exp(\\mathrm{NN}_\\theta(\\mathbf x))$ for an arbitrary neural network"
+        ],
+        ans: [0, 1] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $Z=\\int_0^\\infty e^{-4x}dx=1/\\lambda=0.25$, so $p(x)=\\lambda e^{-\\lambda x}=4e^{-4x}$ (Exponential). Dividing by the volume turns any $g\\ge0$ into a valid density.", 5),
+      mkBubble("<b>Q2.</b> $Z=\\sqrt{2\\pi\\sigma^2}=\\sqrt{4\\pi}\\approx3.54$. It depends on $\\sigma$ but not on $\\mu$: in general $Z=Z(\\theta)$, so its gradient matters in learning.", 26),
+      mkBubble("<b>Q3 — first two.</b> AR: integrate $\\mathbf y$ first (→1), then $\\mathbf x$ (→1). Convex mixture: $\\alpha+(1-\\alpha)=1$ (GMM, VAE marginal). A product over the same $\\mathbf x$ is a Product of Experts → needs its own $Z$. Weights $0.7+0.5=1.2≠1$. A raw $\\exp(\\mathrm{NN})$ is exactly the EBM case — $Z$ unknown.", 47)
+    ]
+  },
+
+  /* ════════════════ 3. The EBM form ════════════════ */
+  {
+    label: 'The energy-based form', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2.1,
+        parts: [
+          "<b>Q1.</b> In $p_\\theta(\\mathbf x)=e^{f_\\theta(\\mathbf x)}/Z(\\theta)$ the energy is $E_\\theta(\\mathbf x)=$ ",
+          { blank: true, ans: "$-f_\\theta(\\mathbf x)$", w: 105, type: 'select',
+            options: ["$f_\\theta(\\mathbf x)$", "$-f_\\theta(\\mathbf x)$", "$\\log Z(\\theta)$", "$e^{f_\\theta(\\mathbf x)}$"] },
+          ".<br>If $f_\\theta(\\mathbf x_1)=3$ and $f_\\theta(\\mathbf x_2)=1$, then $p_\\theta(\\mathbf x_1)/p_\\theta(\\mathbf x_2)=$ ",
+          { blank: true, ans: "$e^{2}\\approx7.39$", w: 125, type: 'select',
+            options: ["$3$", "$e^{2}\\approx7.39$", "$e^{-2}\\approx0.14$", "unknown without $Z$"] },
+          ".<br>Adding a constant $c$ to $f_\\theta$ everywhere makes this ratio ",
+          { blank: true, ans: 'unchanged', w: 110, type: 'select', options: ['larger', 'smaller', 'unchanged'] },
+          "."
+        ] },
+      { type: 'radio', x: QX, y: 35, w: QW, fs: 12,
+        question: "<b>Q2.</b> Why does the EBM use $\\exp(f_\\theta(\\mathbf x))$, rather than e.g. $f_\\theta(\\mathbf x)^2$, to obtain a non-negative function?",
+        choices: [
+          "Because the exponential automatically makes $\\int e^{f_\\theta}d\\mathbf x=1$",
+          "Because then $\\log p_\\theta=f_\\theta-\\log Z$: modest changes of $f_\\theta$ give multiplicative (orders-of-magnitude) changes of probability, and many exponential-family / physical laws have this form",
+          "Because $f_\\theta^2$ cannot be differentiated by back-propagation",
+          "Because the exponential removes the need for a partition function"
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $f_\\theta=-E_\\theta$: low energy ⇔ high probability (physics convention, hence the minus sign). Ratio: $e^{f(\\mathbf x_1)-f(\\mathbf x_2)}=e^{2}$ — $Z$ cancels. Adding $c$ multiplies the numerator <i>and</i> $Z$ by $e^{c}$, so the distribution is unchanged: $f_\\theta$ is defined only up to an additive constant.", 6),
+      mkBubble("<b>Q2.</b> Log-probability is the natural scale: a difference of 10 in $f_\\theta$ is a factor $e^{10}\\approx22{,}000$ in probability, so a smooth network can express huge variations; with $f^2$ it would have to be highly non-smooth. The form matches exponential families and the Boltzmann law $p\\propto e^{-E/kT}$. It does <u>not</u> normalise anything — $Z$ is still needed. Softmax is the same idea over a finite set of classes, where $Z$ is a short sum.", 38)
+    ]
+  },
+
+  /* ════════════════ 4. Tasks without Z ════════════════ */
+  {
+    label: 'Tasks that do not need Z', maxTries: 3,
+    questions: [
+      lbl(8, "<b>Q1.</b> Does each task need the partition function $Z(\\theta)$ (or its gradient)?"),
+      { type: 'match', x: QX + 1, y: 12, w: 520, fs: 10.5,
+        dotSize: 12, dotGap: 6, colGap: 50,
+        left: [
+          "Exact value $p_\\theta(\\mathbf x)$",
+          "Is $\\mathbf x$ likelier than $\\mathbf x'$?",
+          "Denoise: $\\arg\\max_{\\mathbf y}p(\\mathbf y|\\mathbf x)$",
+          "Exact MLE grad. $∇_\\theta\\log p_\\theta$",
+          "Classify: $\\arg\\min_y E(\\mathbf x,y)$"
+        ],
+        right: ['<b>Needs Z</b>', '<b>Z-free</b>'],
+        ans: [0, 1, 1, 0, 1] },
+      { type: 'radio', x: QX, y: 47, w: QW, fs: 11.5,
+        question: "<b>Q2.</b> Ising denoising (slide 147): a new corrupted $5\\times5$ binary image $\\mathbf x$ arrives. How is the clean image $\\mathbf y$ recovered?",
+        choices: [
+          "Compute $Z$ over all $2^{50}$ joint configurations, then evaluate $p(\\mathbf y|\\mathbf x)$",
+          "Maximise $\\sum_i\\psi_i(x_i,y_i)+\\sum_{(i,j)\\in E}\\psi_{ij}(y_i,y_j)$ over $\\mathbf y$ — neither $Z$ nor $p(\\mathbf x)$ is needed",
+          "Output $\\mathbf y=\\mathbf x$, since $\\psi_i$ already ties every pixel to its observation",
+          "Maximise only the pairwise prior $\\sum\\psi_{ij}(y_i,y_j)$"
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> Comparisons are Z-free: $\\frac{p(\\mathbf x)}{p(\\mathbf x')}=e^{f(\\mathbf x)-f(\\mathbf x')}$. Denoising and classification are argmax/argmin over candidates that all share the same $Z$ (slide 147: object recognition, sequence labelling, image restoration; also anomaly detection). An exact probability value, or the exact MLE gradient $∇ f-∇\\log Z$, does need $Z$.", 7),
+      mkBubble("<b>Q2.</b> $p(\\mathbf y|\\mathbf x)=p(\\mathbf y,\\mathbf x)/p(\\mathbf x)$, and both $p(\\mathbf x)$ and $1/Z$ are constants in $\\mathbf y$ ⇒ MAP = maximise the exponent. $\\psi_i$ keeps $y_i$ close to $x_i$ (likelihood); $\\psi_{ij}$ makes neighbours agree (smoothness prior). Copying $\\mathbf x$ ignores the prior; the prior alone gives a constant image. ($25+25=50$ binary variables ⇒ $2^{50}$ joint states.)", 47)
+    ]
+  },
+
+  /* ════════════════ 5. Product of Experts ════════════════ */
+  {
+    label: 'Product of Experts vs. mixtures', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2.1,
+        parts: [
+          "<b>Q1.</b> At an input $\\mathbf x$ three normalised experts give $q=0.5,\\ r=0,\\ t=0.9$.<br>The un-normalised product $q\\,r\\,t=$ ",
+          { blank: true, ans: '0', w: 45 },
+          " while an equal-weight mixture gives ",
+          { blank: true, ans: "$\\approx0.47$", w: 90, type: 'select',
+            options: ["$0$", "$\\approx0.47$", "$1.4$", "$0.225$"] },
+          ".<br>Hence a product behaves like logical ",
+          { blank: true, ans: 'AND', w: 70, type: 'select', options: ['AND', 'OR', 'XOR'] },
+          " and a mixture like logical ",
+          { blank: true, ans: 'OR', w: 70, type: 'select', options: ['AND', 'OR', 'XOR'] },
+          "."
+        ] },
+      { type: 'radio', x: QX, y: 36, w: QW, fs: 12,
+        question: "<b>Q2.</b> Two experts are both the standard normal $\\mathcal N(0,1)$. What is $\\int q(x)\\,r(x)\\,dx$ — the factor that $Z(\\theta_1,\\theta_2)$ must correct?",
+        choices: [
+          "$1$ — a product of densities is a density",
+          "$\\frac{1}{2\\sqrt{\\pi}}\\approx0.28$",
+          "$\\frac{1}{\\sqrt{2\\pi}}\\approx0.40$",
+          "$2$"
+        ],
+        ans: 1 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $0.5\\cdot0\\cdot0.9=0$: one veto kills $\\mathbf x$ — an intersection of constraints (AND), e.g. <i>Young AND Female AND Smiling</i> faces (Du et al. 2020). Mixture: $(0.5+0+0.9)/3\\approx0.47$ — one believer suffices (OR). In energy terms a PoE simply adds energies: $E=E_1+E_2+E_3$.", 6),
+      mkBubble("<b>Q2.</b> $q\\,r=\\frac{1}{2\\pi}e^{-x^2}$ and $\\int e^{-x^2}dx=\\sqrt\\pi$ ⇒ $\\frac{\\sqrt\\pi}{2\\pi}=\\frac{1}{2\\sqrt\\pi}\\approx0.28≠1$. After renormalising, the product is $\\mathcal N(0,\\tfrac12)$ — sharper than either expert: agreeing experts make the model more confident. For neural experts there is no closed form, so $Z(\\theta_1,\\theta_2,\\theta_3)$ is handled as in any EBM.", 39)
+    ]
+  },
+
+  /* ════════════════ 6. Hopfield / BM / RBM ════════════════ */
+  {
+    label: 'Hopfield, BM & RBM', maxTries: 3,
+    questions: [
+      { type: 'hotspot', x: QX, y: 8, w: 50, fs: 11.5,
+        question: "<b>Q1.</b> Click the graph whose energy is $E(\\mathbf v,\\mathbf h)=-(\\mathbf v^\\top W\\mathbf h+\\mathbf a^\\top\\mathbf v+\\mathbf b^\\top\\mathbf h)$ (red = hidden, grey = visible).",
+        src: BM_SVG,
+        spots: [ { x: 16.67, y: 48, r: 16, label: 'A' },
+                 { x: 50,    y: 48, r: 16, label: 'B' },
+                 { x: 83.33, y: 48, r: 16, label: 'C' } ],
+        ans: 1 },
+      { type: 'radio', x: QX, y: 49, w: QW, fs: 11,
+        question: "<b>Q2.</b> What does the \"restriction\" in an RBM buy us computationally?",
+        choices: [
+          "Given $\\mathbf x$, the hidden units are conditionally independent: $p(\\mathbf z|\\mathbf x)=\\prod_j p(z_j|\\mathbf x)$, enabling cheap block-Gibbs sampling",
+          "It makes $Z(W,\\mathbf b,\\mathbf c)$ available in closed form",
+          "It removes the need for hidden units altogether"
+        ],
+        ans: 0 },
+      { type: 'cloze', x: QX, y: 75, w: QW, fs: 12.5, lineSpacing: 2,
+        parts: [
+          "<b>Q3.</b> An RBM with $n=10$ visible and $m=20$ hidden binary units: $Z$ is a sum over ",
+          { blank: true, ans: "$2^{30}$", w: 80, type: 'select',
+            options: ["$200$", "$30^2$", "$2^{30}$", "$2^{200}$"] },
+          " configurations."
+        ] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1 — graph B.</b> The energy has only cross terms $v_iW_{ij}h_j$ (+ biases) ⇒ edges only <i>between</i> the layers. A has no hidden units: Hopfield, $E(\\mathbf x)=-\\tfrac12\\mathbf x^\\top W\\mathbf x-\\mathbf b^\\top\\mathbf x$. C connects every pair (v–v and h–h too): the general Boltzmann machine.", 8),
+      mkBubble("<b>Q2.</b> With no $z_iz_j$ terms the exponent splits into a sum of terms each involving one $z_j$, so $p(z_j{=}1|\\mathbf x)=\\sigma(c_j+\\mathbf x^\\top W_{:,j})$ independently (and symmetrically for $\\mathbf x|\\mathbf z$). $Z$ remains intractable.", 47),
+      mkBubble("<b>Q3.</b> $2^{10}\\cdot2^{20}=2^{30}\\approx10^9$ terms — exponential in $n+m$ (200 is just the number of weights).", 69)
+    ]
+  },
+
+  /* ════════════════ 7. RBM training ════════════════ */
+  {
+    label: 'RBM training: two phases', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2.3,
+        parts: [
+          "<b>Q1.</b> For a binary RBM, $\\frac{\\partial\\ell}{\\partial W_{dk}}=\\frac1N\\sum_n\\big($ ",
+          { blank: true, ans: "$\\mathbb E[x_dz_k\\,|\\,\\mathbf x_n]$", w: 115, type: 'select',
+            options: ["$\\mathbb E[x_dz_k]$", "$\\mathbb E[x_dz_k\\,|\\,\\mathbf x_n]$"] },
+          " $-$ ",
+          { blank: true, ans: "$\\mathbb E[x_dz_k]$", w: 115, type: 'select',
+            options: ["$\\mathbb E[x_dz_k]$", "$\\mathbb E[x_dz_k\\,|\\,\\mathbf x_n]$"] },
+          " $\\big)$.<br>The first term is the ",
+          { blank: true, ans: 'clamped (positive)', w: 150, type: 'select',
+            options: ['free-running (negative)', 'clamped (positive)'] },
+          " phase and it is ",
+          { blank: true, ans: 'cheap', w: 100, type: 'select', options: ['intractable', 'cheap'] },
+          " to compute."
+        ] },
+      { type: 'radio', x: QX, y: 34, w: QW, fs: 11.5,
+        question: "<b>Q2.</b> Training reaches a point where $\\mathbb E_{p_{\\mathcal D}(\\mathbf x)p(\\mathbf z|\\mathbf x)}[\\mathbf x\\mathbf z^\\top]=\\mathbb E_{p(\\mathbf x,\\mathbf z)}[\\mathbf x\\mathbf z^\\top]$ (and likewise for the bias statistics). What can you conclude?",
+        choices: [
+          "The likelihood gradient vanishes: MLE in this exponential family is <i>moment matching</i> — the model reproduces the data's sufficient statistics",
+          "The model has memorised the training set exactly",
+          "The partition function has become $Z=1$",
+          "Training has diverged, because the positive and negative phases cancel"
+        ],
+        ans: 0 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $\\ell=\\frac1N\\sum_n\\log Z(\\theta,\\mathbf x_n)-\\log Z(\\theta)$: a difference of a <i>clamped</i> and an <i>unclamped</i> log-partition function. Their gradients are expected features. With $\\mathbf x$ clamped to data, $\\mathbb E[z_k|\\mathbf x_n]=\\sigma(\\cdot)$ is closed-form (cheap). The model expectation needs samples from $p(\\mathbf x,\\mathbf z)$ — intractable, hence contrastive divergence.", 6),
+      mkBubble("<b>Q2.</b> For any $p\\propto\\exp(\\theta^\\top\\phi)$, $∇_\\theta\\ell=\\mathbb E_{data}[\\phi]-\\mathbb E_{model}[\\phi]$, so the MLE fixed point matches expected sufficient statistics. That is <u>not</u> memorisation (many distributions share these moments), and $Z$ need not be 1. This positive/negative balance is exactly what contrastive divergence approximates.", 40)
+    ]
+  },
+
+  /* ════════════════ 8. CD intuition ════════════════ */
+  {
+    label: 'Contrastive divergence — intuition', maxTries: 3,
+    questions: [
+      { type: 'hotspot', x: QX, y: 8, w: 48, fs: 11.5,
+        question: "<b>Q1.</b> Energy $E_\\theta=-f_\\theta$ before one CD update that uses training point A and model sample B. Click the point whose energy this update <u>raises</u>.",
+        src: ENERGY_SVG,
+        spots: [ { x: 31.67, y: 47.83, r: 5, label: 'A' },
+                 { x: 50,    y: 36.96, r: 5, label: 'C' },
+                 { x: 70,    y: 80.43, r: 5, label: 'B' } ],
+        ans: 2 },
+      { type: 'radio', x: QX, y: 51, w: QW, fs: 11,
+        question: "<b>Q2.</b> Why is \"just increase $f_\\theta(\\mathbf x_{train})$\" not enough?",
+        choices: [
+          "The model is un-normalised: adding the same constant to $f_\\theta$ everywhere raises $Z(\\theta)$ by the same factor and leaves $p_\\theta(\\mathbf x_{train})$ unchanged",
+          "Gradients of $f_\\theta$ with respect to $\\theta$ do not exist at training points",
+          "Increasing $f_\\theta(\\mathbf x_{train})$ would automatically decrease $Z(\\theta)$ too fast"
+        ],
+        ans: 0 },
+      { type: 'cloze', x: QX, y: 79, w: QW, fs: 12.5, lineSpacing: 2,
+        parts: [
+          "<b>Q3.</b> If the model is perfect ($p_\\theta=p_{data}$), the <i>expected</i> CD gradient is ",
+          { blank: true, ans: 'zero', w: 150, type: 'select',
+            options: ["$∇_\\theta f_\\theta(\\mathbf x_{train})$", 'zero', "$+\\infty$"] },
+          "."
+        ] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1 — B.</b> CD steps along $∇_\\theta[f_\\theta(\\mathbf x_{train})-f_\\theta(\\mathbf x_{sample})]$: raise $f$ (lower energy) at data A, lower $f$ (raise energy) at the model's sample B — the \"wrong answer\" the model currently likes. C is not where samples land, so it is (to first order) untouched.", 7),
+      mkBubble("<b>Q2.</b> Only relative values matter: $p=e^{f}/Z$. If every $f$ rises by $c$, $Z$ grows by $e^{c}$ and nothing changes. So CD also pushes down model samples — a Monte-Carlo way of decreasing $Z(\\theta)$.", 50),
+      mkBubble("<b>Q3.</b> Both terms become expectations of $∇_\\theta f_\\theta$ under the same distribution: push-up and push-down cancel — a fixed point.", 68)
+    ]
+  },
+
+  /* ════════════════ 9. CD derivation ════════════════ */
+  {
+    label: 'Contrastive divergence — derivation', maxTries: 3,
+    questions: [
+      { type: 'ordering', x: QX, y: 8, w: 58, fs: 11.5,
+        question: "<b>Q1.</b> Order the derivation of $∇_\\theta\\log p_\\theta(\\mathbf x_{tr})$ (top = first line):",
+        items: [
+          "$∇_\\theta f_\\theta(\\mathbf x_{tr})-\\mathbb E_{\\mathbf x\\sim p_\\theta}[∇_\\theta f_\\theta(\\mathbf x)]$",
+          "$∇_\\theta f_\\theta(\\mathbf x_{tr})-∇_\\theta\\log Z(\\theta)$",
+          "$\\approx∇_\\theta f_\\theta(\\mathbf x_{tr})-∇_\\theta f_\\theta(\\mathbf x_{sample})$",
+          "$∇_\\theta f_\\theta(\\mathbf x_{tr})-\\int\\tfrac{e^{f_\\theta(\\mathbf x)}}{Z(\\theta)}∇_\\theta f_\\theta(\\mathbf x)\\,d\\mathbf x$",
+          "$∇_\\theta f_\\theta(\\mathbf x_{tr})-\\tfrac{1}{Z(\\theta)}\\int∇_\\theta e^{f_\\theta(\\mathbf x)}\\,d\\mathbf x$"
+        ],
+        ans: [1, 4, 3, 0, 2] },
+      { type: 'radio', x: QX, y: 57, w: QW, fs: 11,
+        question: "<b>Q2.</b> In practice $\\mathbf x_{sample}$ comes from only $k$ MCMC steps started at the data (CD-$k$). Which statement is correct?",
+        choices: [
+          "The one-sample estimate is unbiased only if $\\mathbf x_{sample}$ is an exact draw from $p_\\theta$; short chains give a biased but cheap gradient",
+          "CD-$k$ is an unbiased estimate of the log-likelihood gradient for every $k\\ge1$",
+          "Using many independent samples per step increases the bias"
+        ],
+        ans: 0 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $\\log p=f-\\log Z$ → $∇\\log Z=∇ Z/Z$ → move $∇_\\theta$ inside the integral (chain rule: $∇ e^{f}=e^{f}∇ f$) → recognise $e^{f}/Z=p_\\theta(\\mathbf x)$, an expectation → replace it by a one-sample Monte-Carlo estimate. Note: $∇_\\theta\\log Z(\\theta)=\\mathbb E_{p_\\theta}[∇_\\theta f_\\theta]$ — the gradient of a log-partition function is an expected feature.", 9),
+      mkBubble("<b>Q2.</b> The Monte-Carlo estimate is exact in expectation only if the chain has mixed ($T\\to\\infty$). CD-$k$ (Hinton, 2002) truncates the chain, trading bias for speed — it optimises something close to, but not exactly, the likelihood. More independent samples only reduce <i>variance</i>.", 54)
+    ]
+  },
+
+  /* ════════════════ 10. MCMC ════════════════ */
+  {
+    label: 'MCMC & Metropolis–Hastings', maxTries: 3,
+    questions: [
+      { type: 'slider', x: QX, y: 9, w: QW, fs: 12,
+        question: "<b>Q1.</b> Random-walk MCMC: $f_\\theta(\\mathbf x^t)=2.0$ and the proposal has $f_\\theta(\\mathbf x')=0.5$. With what probability is $\\mathbf x'$ accepted?",
+        min: 0, max: 1, step: 0.01, ans: 0.22, tol: 0.02, unit: '' },
+      { type: 'cloze', x: QX, y: 36, w: QW, fs: 12.5, lineSpacing: 2.2,
+        parts: [
+          "<b>Q2.</b> Check detailed balance (symmetric proposal). Suppose $p_\\theta(\\mathbf x')=4\\,p_\\theta(\\mathbf x)$.<br>Acceptance prob. of $\\mathbf x\\to\\mathbf x'$: ",
+          { blank: true, ans: "$1$", w: 65, type: 'select', options: ["$0$", "$0.25$", "$1$", "$4$"] },
+          " ; of $\\mathbf x'\\to\\mathbf x$: ",
+          { blank: true, ans: "$0.25$", w: 65, type: 'select', options: ["$0$", "$0.25$", "$1$", "$4$"] },
+          ".<br>Then $p(\\mathbf x)\\,T_{\\mathbf x\\to\\mathbf x'}$ ",
+          { blank: true, ans: "$=$", w: 55, type: 'select', options: ["$<$", "$=$", "$>$"] },
+          " $p(\\mathbf x')\\,T_{\\mathbf x'\\to\\mathbf x}$, so $p_\\theta$ is ",
+          { blank: true, ans: 'stationary', w: 120, type: 'select', options: ['stationary', 'not invariant'] },
+          " for the chain."
+        ] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> Downhill move ⇒ accept with prob. $\\exp(f(\\mathbf x')-f(\\mathbf x^t))=e^{-1.5}\\approx0.22$. An uphill proposal is always accepted. Occasional downhill moves let the chain explore instead of getting stuck in a local mode — and only <i>differences</i> of $f$ appear, so $Z$ is never needed.", 8),
+      mkBubble("<b>Q2.</b> $p(\\mathbf x)\\cdot1=p(\\mathbf x)$ and $4p(\\mathbf x)\\cdot\\tfrac14=p(\\mathbf x)$ ✓. Detailed balance ⇒ if $\\mathbf x^t\\sim p_\\theta$ then $\\mathbf x^{t+1}\\sim p_\\theta$; with ergodicity $\\mathbf x^T\\to p_\\theta$ as $T\\to\\infty$. Weakness: convergence can be extremely slow and degrades exponentially with dimension.", 38)
+    ]
+  },
+
+  /* ════════════════ 11. Langevin ════════════════ */
+  {
+    label: 'Unadjusted Langevin MCMC', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2.2,
+        parts: [
+          "<b>Q1.</b> ULA update: $\\mathbf x^{t+1}=\\mathbf x^t+\\epsilon\\,$",
+          { blank: true, ans: "$∇_{\\mathbf x}f_\\theta(\\mathbf x^t)$", w: 120, type: 'select',
+            options: ["$∇_{\\theta}f_\\theta(\\mathbf x^t)$", "$∇_{\\mathbf x}f_\\theta(\\mathbf x^t)$", "$∇_{\\mathbf x}\\log Z(\\theta)$"] },
+          " $+$ ",
+          { blank: true, ans: "$\\sqrt{2\\epsilon}$", w: 75, type: 'select',
+            options: ["$2\\epsilon$", "$\\epsilon^2$", "$\\sqrt{2\\epsilon}$"] },
+          " $\\mathbf z^t$, with $\\mathbf z^t\\sim\\mathcal N(0,I)$."
+        ] },
+      { type: 'cloze', x: QX, y: 29, w: QW, fs: 12.5, lineSpacing: 2,
+        parts: [
+          "<b>Q2.</b> Target $\\mathcal N(0,1)$, so $∇_x\\log p(x)=-x$. With $x^t=2$, $\\epsilon=0.1$ and a drawn noise $z^t=0$, the next iterate is $x^{t+1}=$ ",
+          { blank: true, ans: '1.8', w: 60 },
+          "."
+        ] },
+      { type: 'checkbox', x: QX, y: 47, w: QW, fs: 11.5,
+        question: "<b>Q3.</b> Unadjusted (ULA) vs. Metropolis-adjusted Langevin (MALA) — select all true statements:",
+        choices: [
+          "ULA accepts every proposal",
+          "MALA needs an extra energy evaluation $E_\\theta(\\mathbf x')$ per step for its accept/reject ratio",
+          "ULA samples exactly from $p_\\theta$ for any finite step size $\\epsilon$",
+          "With too large $\\epsilon$, ULA can become unstable or strongly biased",
+          "Computing $∇_{\\mathbf x}E_\\theta(\\mathbf x)$ requires knowing $Z(\\theta)$"
+        ],
+        ans: [0, 1, 3] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $∇_{\\mathbf x}\\log p_\\theta=∇_{\\mathbf x}f_\\theta-∇_{\\mathbf x}\\log Z$, and the last term is 0 ($Z$ has no $\\mathbf x$). One backprop to the input. Noise std $\\sqrt{2\\epsilon}$ ⇒ $\\mathbf x^T\\to p_\\theta$ as $\\epsilon\\to0,\\,T\\to\\infty$.", 4),
+      mkBubble("<b>Q2.</b> $x^{t+1}=2+0.1\\cdot(-2)+\\sqrt{0.2}\\cdot0=1.8$: the drift pulls toward the mode at 0; the noise (zero here) spreads samples to the right variance.", 26),
+      mkBubble("<b>Q3 — 1, 2, 4.</b> ULA = Euler–Maruyama step with no correction: cheap, but with a step-size bias that vanishes as $\\epsilon\\to0$. MALA adds a Metropolis test (exact stationary law) at the cost of extra forward passes and rejections. In EBM training \"good-enough\" negatives suffice, so ULA is preferred. No $Z$ anywhere.", 48)
+    ]
+  },
+
+  /* ════════════════ 12. Langevin derivation & dimension ════════════════ */
+  {
+    label: 'Langevin: derivation & dimension', maxTries: 3,
+    questions: [
+      { type: 'radio', x: QX, y: 9, w: QW, fs: 12,
+        question: "<b>Q1.</b> Euler–Maruyama discretisation of $d\\mathbf x=\\tfrac12∇_{\\mathbf x}\\log\\pi(\\mathbf x)\\,dt+d\\mathbf w$ with step $\\tau=0.04$. What is the standard deviation of the injected noise per coordinate?",
+        choices: [ "$0.04$", "$0.2$", "$0.0016$", "$0.02$" ],
+        ans: 1 },
+      { type: 'radio', x: QX, y: 44, w: QW, fs: 11.5,
+        question: "<b>Q2.</b> To get \"cleaner\" samples from a 3072-dimensional image EBM, a colleague deletes the noise term of Langevin dynamics but keeps the gradient step. What happens?",
+        choices: [
+          "The chain becomes gradient ascent on $\\log p_\\theta$ and collapses onto (local) modes: diversity is lost and the negatives used in training become unrepresentative",
+          "Samples become exact draws from $p_\\theta$, only faster",
+          "Nothing changes — the noise averages out over iterations anyway",
+          "The chain turns into random-walk Metropolis"
+        ],
+        ans: 0 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1 — 0.2.</b> Brownian increments satisfy $\\mathbf w_{k+1}-\\mathbf w_k\\sim\\mathcal N(0,\\tau I)$, so the noise is $\\sqrt\\tau\\,\\boldsymbol\\epsilon=0.2\\,\\boldsymbol\\epsilon$, while the drift is $\\tfrac{\\tau}{2}∇\\log\\pi=0.02\\,∇\\log\\pi$. Setting $\\epsilon=\\tau/2$ gives the slide-156 form $\\epsilon∇\\log p+\\sqrt{2\\epsilon}\\,\\mathbf z$.", 8),
+      mkBubble("<b>Q2.</b> The gradient pulls toward low energy; the noise makes the chain visit regions <i>in proportion to</i> their probability. Without noise you get MAP-like mode seeking. Conversely, pure noise (random walk) in high dimension almost always proposes high-energy points and is rejected — $∇_{\\mathbf x}E_\\theta$ is the vector field that makes high-dimensional sampling feasible.", 43)
+    ]
+  },
+
+  /* ════════════════ 13. Score matching ════════════════ */
+  {
+    label: 'Score functions & score matching', maxTries: 3,
+    questions: [
+      lbl(8, "<b>Q1.</b> Match each density to its score $s(x)=\\tfrac{d}{dx}\\log p(x)$:"),
+      { type: 'match', x: QX + 1, y: 12, w: 470, fs: 10.5,
+        dotSize: 12, dotGap: 4, colGap: 60,
+        left: [
+          "Gaussian $\\mathcal N(\\mu,\\sigma^2)$",
+          "Gamma$(\\alpha,\\beta)$",
+          "Exponential$(\\lambda)$",
+          "Laplace $\\propto e^{-|x|/b}$"
+        ],
+        right: [
+          "$-\\lambda$",
+          "$-(x-\\mu)/\\sigma^2$",
+          "$-\\mathrm{sign}(x)/b$",
+          "$(\\alpha-1)/x-\\beta$"
+        ],
+        ans: [1, 3, 0, 2] },
+      { type: 'cloze', x: QX, y: 41, w: QW, fs: 12, lineSpacing: 2,
+        parts: [
+          "<b>Q2.</b> Model $f_\\theta(x)=-\\theta x^2/2$, objective $J(\\theta)=\\mathbb E_{p_{data}}\\big[\\tfrac12 f_\\theta'(x)^2+f_\\theta''(x)\\big]$. The data have mean 0 and variance 4. Minimiser: $\\theta^*=$ ",
+          { blank: true, ans: '0.25', w: 60 },
+          " (decimal)."
+        ] },
+      { type: 'checkbox', x: QX, y: 57, w: QW, fs: 11,
+        question: "<b>Q3.</b> Select all true statements about score matching for EBMs:",
+        choices: [
+          "Training needs no samples from the EBM",
+          "The unknown data score $∇_{\\mathbf x}\\log p_{data}$ is eliminated by integration by parts",
+          "$\\mathrm{tr}\\,∇^2_{\\mathbf x}f_\\theta$ costs $\\sim d$ backward passes, motivating sliced / denoising score matching",
+          "After training, new samples can be generated without any MCMC"
+        ],
+        ans: [0, 1, 2] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> Differentiate $\\log p$: every normaliser ($\\sqrt{2\\pi}\\sigma$, $\\beta^\\alpha/\\Gamma(\\alpha)$, $\\lambda$, $2b$) vanishes since it has no $x$. Gaussian $-(x-\\mu)/\\sigma^2$; Gamma $(\\alpha-1)/x-\\beta$; Exponential $-\\lambda$; Laplace $-\\mathrm{sign}(x)/b$. Score = field, density = potential ($\\vec E=-∇ V$).", 6),
+      mkBubble("<b>Q2.</b> $f'=-\\theta x,\\ f''=-\\theta$ ⇒ $J=\\tfrac12\\theta^2\\mathbb E[x^2]-\\theta$ ⇒ $\\theta^*=1/\\mathbb E[x^2]=0.25$: the true precision, found without ever computing $Z$.", 39),
+      mkBubble("<b>Q3 — 1, 2, 3.</b> The Fisher-divergence objective $\\mathbb E_{p_{data}}[\\tfrac12\\|∇_{\\mathbf x}f_\\theta\\|^2+\\mathrm{tr}∇^2_{\\mathbf x}f_\\theta]$ uses data only; the Hessian trace scales badly with $d$. Generation still needs Langevin MCMC. It minimises the Fisher divergence, not KL (KL ↔ MLE / CD).", 57)
+    ]
+  },
+
+  /* ════════════════ 14. NCE ════════════════ */
+  {
+    label: 'Noise contrastive estimation (NCE)', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12.5, lineSpacing: 2,
+        parts: [
+          "<b>Q1.</b> At some $\\mathbf x$: $p_{data}(\\mathbf x)=0.3$ and $p_n(\\mathbf x)=0.1$. The optimal discriminator outputs $D^*(\\mathbf x)=$ ",
+          { blank: true, ans: '0.75', w: 60 },
+          " (decimal)."
+        ] },
+      { type: 'radio', x: QX, y: 23, w: QW, fs: 11.5,
+        question: "<b>Q2.</b> In NCE, $Z$ is treated as a free trainable scalar. At the optimum, what is it?",
+        choices: [
+          "Arbitrary — it merely rescales the discriminator",
+          "The true partition function $\\int e^{f_{\\theta^*}(\\mathbf x)}d\\mathbf x$, so the learned model is (approximately) self-normalised",
+          "Always exactly 1, by construction",
+          "The normaliser of the noise distribution $p_n$"
+        ],
+        ans: 1 },
+      { type: 'checkbox', x: QX, y: 52, w: QW, fs: 11,
+        question: "<b>Q3.</b> Which properties should the noise distribution $p_n$ have? (select all)",
+        choices: [
+          "Its density $p_n(\\mathbf x)$ can be evaluated",
+          "It is easy to sample from",
+          "It is non-zero wherever $p_{data}$ is non-zero",
+          "It is close to $p_{data}$, so that the classification is not trivially easy",
+          "It must equal the EBM $p_\\theta$ itself"
+        ],
+        ans: [0, 1, 2, 3] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $D^*=\\frac{p_{data}}{p_{data}+p_n}=\\frac{0.3}{0.4}=0.75$. Inverting, $p_{data}=p_n\\frac{D^*}{1-D^*}$: the trained classifier reveals the density ratio.", 4),
+      mkBubble("<b>Q2.</b> NCE uses $D_{\\theta,Z}=\\frac{e^{f_\\theta}/Z}{e^{f_\\theta}/Z+p_n}$; the optimal classifier forces $e^{f_{\\theta^*}}/Z^*=p_{data}$, a normalised density ⇒ $Z^*=\\int e^{f_{\\theta^*}}$. Unlike MLE, NCE can learn $Z$ because the normalised $p_n$ acts as a reference.", 23),
+      mkBubble("<b>Q3 — first four.</b> $\\log p_n$ appears in the loss (inside log-sum-exp with $\\log Z$); sampling supplies contrast examples; support coverage keeps the ratio identifiable; a too-easy task (uniform noise vs. images) gives weak gradients. Using $p_\\theta$ itself would bring MCMC back.", 52)
+    ]
+  },
+
+  /* ════════════════ 15. NCE vs GAN & FCE ════════════════ */
+  {
+    label: 'NCE vs. GAN & FCE', maxTries: 3,
+    questions: [
+      lbl(8, "<b>Q1.</b> Assign each statement to NCE, GAN, or both:"),
+      { type: 'match', x: QX + 1, y: 12, w: 470, fs: 10.5,
+        dotSize: 11, dotGap: 3, colGap: 60,
+        left: [
+          "Discriminator + cross-entropy",
+          "Minimax (adversarial) optimisation",
+          "Needs density of contrast samples",
+          "Learns a deterministic generator",
+          "Likelihood-free training",
+          "Outcome is an EBM"
+        ],
+        right: ['<b>NCE</b>', '<b>GAN</b>', '<b>Both</b>'],
+        ans: [2, 1, 0, 1, 2, 0] },
+      { type: 'radio', x: QX, y: 50, w: QW, fs: 11,
+        question: "<b>Q2.</b> Flow contrastive estimation learns the noise distribution as a normalising flow $p_{n,\\phi}$, trained adversarially. Why a <i>flow</i> rather than a GAN generator?",
+        choices: [
+          "NCE needs both exact density evaluation $p_{n,\\phi}(\\mathbf x)$ and fast sampling — a flow provides both",
+          "A flow has no trainable parameters, so training is stable",
+          "A GAN generator cannot be trained jointly with a discriminator"
+        ],
+        ans: 0 }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> <b>Both:</b> a binary classifier with cross-entropy; likelihood-free. <b>GAN only:</b> minimax game; deterministic generator $G(\\mathbf z)$ (sampling the prior suffices). <b>NCE only:</b> needs $\\log p_n$ of the contrast samples; its outcome is an EBM $e^{f_\\theta}/Z$; no adversary ⇒ no GAN-style instability.", 8),
+      mkBubble("<b>Q2.</b> Slide 166: $p_{n,\\phi}$ is pushed toward $p_{data}$ (hard classification ⇒ informative gradients) via $\\min_\\phi\\max_{\\theta,Z}$, i.e. minimising $D_{JS}(p_{data},p_{n,\\phi})$. A GAN generator has no tractable density for the $\\log p_n$ term.", 49)
+    ]
+  },
+
+  /* ════════════════ 16. Adversarial EBMs & synthesis ════════════════ */
+  {
+    label: 'Adversarial EBM training & synthesis', maxTries: 3,
+    questions: [
+      { type: 'cloze', x: QX, y: 8, w: QW, fs: 12, lineSpacing: 2.1,
+        parts: [
+          "<b>Q1.</b> Adversarial EBM training uses $\\mathbb E_{p_{data}}[\\log p_\\theta]\\le\\mathbb E_{p_{data}}[f_\\theta]-\\mathbb E_{q_\\phi}[f_\\theta]-H(q_\\phi)$, which follows from ",
+          { blank: true, ans: "Jensen's inequality", w: 150, type: 'select',
+            options: ["Cauchy–Schwarz", "Jensen's inequality", "Markov's inequality"] },
+          "; the bound is tight when $q_\\phi=$ ",
+          { blank: true, ans: "$p_\\theta$", w: 90, type: 'select',
+            options: ["$p_{data}$", "$p_\\theta$", "$\\mathcal N(0,I)$"] },
+          "."
+        ] },
+      { type: 'cloze', x: QX, y: 29, w: QW, fs: 12, lineSpacing: 1.4,
+        parts: [
+          "<b>Q2.</b> Explain why the partition function makes maximum-likelihood training of EBMs hard, and how contrastive divergence and score matching each deal with it.<br>",
+          { blank: true, type: 'open', w: 520, h: 62,
+            placeholder: 'Write your answer here. It will be evaluated by AI…',
+            ans: "The MLE gradient is grad f(x_train) - grad log Z, and grad log Z = E_{x~p_theta}[grad f(x)] requires integrating over all x (exponential in dimension) or sampling from the model. Contrastive divergence approximates this expectation by Monte Carlo with samples from short MCMC/Langevin chains: it pushes up f at data and pushes down f at model samples. Score matching avoids Z entirely by matching the score grad_x log p, where log Z vanishes because it does not depend on x; after integration by parts the objective E_data[1/2||grad_x f||^2 + tr(Hessian_x f)] uses only data, so no sampling is needed during training (MCMC is still used to generate samples)." }
+        ] },
+      { type: 'cloze', x: QX, y: 57, w: QW, fs: 12, lineSpacing: 1.4,
+        parts: [
+          "<b>Q3.</b> You must train an EBM on 64×64 images for anomaly detection (rank test images by how typical they are), and training must be fast. Would you choose CD, score matching, or NCE? Justify and state one trade-off.<br>",
+          { blank: true, type: 'open', w: 520, h: 62,
+            placeholder: 'Write your answer here. It will be evaluated by AI…',
+            ans: "Ranking only needs relative values f_theta(x) because Z cancels in comparisons, so an un-normalised EBM is enough. For fast training prefer a sampling-free method: denoising or sliced score matching (scalable versions of score matching) or NCE with a good noise model; contrastive divergence needs MCMC chains at every training step and is slow in high dimension. Trade-offs: score matching never learns Z and the exact Hessian-trace version is too expensive, so approximations (sliced / denoising) are used; NCE needs a noise distribution with tractable density that is close to the data (e.g. a flow, as in flow contrastive estimation), otherwise the classification is too easy." }
+        ] }
+    ],
+    bubbles: [
+      mkBubble("<b>Q1.</b> $\\log\\int q\\frac{e^{f}}{q}\\ge\\int q\\log\\frac{e^{f}}{q}$ ⇒ $\\log Z\\ge\\mathbb E_q[f]+H(q)$, equality iff $q_\\phi=p_\\theta$. $\\min_\\phi$ tightens the bound, $\\max_\\theta$ trains the EBM — a GAN-like maximin; $q_\\phi$ needs fast sampling + tractable entropy (flows).", 3),
+      mkBubble("<b>Q2 — reference.</b> MLE gradient $=∇ f(\\mathbf x)-\\mathbb E_{p_\\theta}[∇ f]$ needs $Z$ or model samples (exponential in $d$). CD estimates the expectation with short MCMC/Langevin chains. Score matching matches $∇_{\\mathbf x}\\log p$, where $\\log Z$ vanishes, and trains on data only.", 29),
+      mkBubble("<b>Q3 — reference.</b> Ranking needs only $f_\\theta(\\mathbf x)$ ($Z$ cancels). Denoising/sliced score matching or NCE train without MCMC (fast); CD needs chains every step. Trade-offs: SM never learns $Z$; NCE needs a good noise model with tractable density (e.g. a flow).", 57)
+    ]
+  }
+
+];
+</script>
+
+<!-- Load the engine AFTER config is defined and KaTeX has loaded -->
+<script>
+  function loadEngine() {
+    var s = document.createElement('script');
+    s.src = 'youtube-quiz-engine.js';
+    document.body.appendChild(s);
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(loadEngine, 100);
+  } else {
+    window.addEventListener('load', function () { setTimeout(loadEngine, 100); });
+  }
+</script>
+
+</body>
+</html>
