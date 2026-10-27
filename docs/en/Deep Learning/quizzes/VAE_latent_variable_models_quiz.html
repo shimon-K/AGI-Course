@@ -155,16 +155,16 @@ var GROUPS = [
       ans:0 },
     { type:'ordering', x:5, y:45, w:62, fs:11,
       question:'<b>Q14.</b> Order the steps of (non-amortised) stochastic variational inference, slide 49.',
-      items:['Update $\\theta\\leftarrow\\theta+\\eta\\nabla_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$',
+      items:['Update $\\theta\\leftarrow\\theta+\\eta∇_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$',
              'Initialise $\\theta$ and $\\phi^1,\\dots,\\phi^M$',
-             'Repeat $\\phi^i\\leftarrow\\phi^i+\\eta\\nabla_{\\phi^i}\\mathcal L$ until convergence ($\\theta$ fixed)',
+             'Repeat $\\phi^i\\leftarrow\\phi^i+\\eta∇_{\\phi^i}\\mathcal L$ until convergence ($\\theta$ fixed)',
              'Sample a data point $x^i$ from $\\mathcal D$',
-             'Compute $\\nabla_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$ ($\\phi$ fixed)'],
+             'Compute $∇_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$ ($\\phi$ fixed)'],
       ans:[1,3,2,4,0] }
   ],
   bubbles:[
     mkBubble('<b>Q13 — A.</b> The EM/MM argument. With an approximate, amortised $q$ the bound does not touch, so VAE training has no monotonicity guarantee — it only raises a lower bound.',10),
-    mkBubble('<b>Q14 — init → sample $x^i$ → optimise $\\phi^i$ → $\\nabla_\\theta$ → update θ.</b> The inner loop and $M$ separate $\\phi^i$ make SVI unscalable → amortised inference.',45)
+    mkBubble('<b>Q14 — init → sample $x^i$ → optimise $\\phi^i$ → $∇_\\theta$ → update θ.</b> The inner loop and $M$ separate $\\phi^i$ make SVI unscalable → amortised inference.',45)
   ]
 },
 
@@ -180,7 +180,7 @@ var GROUPS = [
       choices:['Gaussian $\\mathcal N(\\mu,\\sigma^2)$','Laplace (location–scale family)','Exponential, via inverse CDF $z=-\\log(u)/\\lambda$','Categorical over $K$ classes'],
       ans:3 },
     { type:'cloze', x:5, y:58, w:62, fs:11, lineSpacing:1.5,
-      parts:['<b>Q17.</b> Slide 49 flags $\\nabla_\\phi\\mathbb E_{q(z;\\phi)}[\\log p(z,x)-\\log q(z;\\phi)]$ as a "Problem!". Explain why, and how reparameterisation fixes it.<br>',
+      parts:['<b>Q17.</b> Slide 49 flags $∇_\\phi\\mathbb E_{q(z;\\phi)}[\\log p(z,x)-\\log q(z;\\phi)]$ as a "Problem!". Explain why, and how reparameterisation fixes it.<br>',
              {blank:true, type:'open', w:520, h:55,
               ans:'The sampling distribution itself depends on phi, so we cannot just sample z from q and differentiate the integrand: the gradient includes the integral of grad_phi q(z;phi) times r(z,phi), which is not an expectation under q (REINFORCE rewrites it using grad log q, but with high variance). Reparameterisation writes z = g(eps;phi) = mu + sigma*eps with eps ~ N(0,I) independent of phi, so E_q[r] = E_eps[r(g(eps;phi),phi)] and the gradient moves inside the expectation: E_eps[grad_phi r(g(eps;phi),phi)], estimated by Monte Carlo with low variance. r depends on phi twice (through z and through log q), handled by the chain rule.',
               placeholder:'Write your answer here. It will be evaluated by AI…'}] }
@@ -188,7 +188,7 @@ var GROUPS = [
   bubbles:[
     mkBubble('<b>Q15 — −0.1; 1; −0.3; 0.06.</b> $\\partial z/\\partial\\sigma=\\varepsilon$, so $\\partial r/\\partial\\sigma=2z\\varepsilon=2(-0.1)(-0.3)=0.06$.',10),
     mkBubble('<b>Q16 — D.</b> A discrete sample is a step function of φ (zero gradient almost everywhere). Use REINFORCE, Gumbel-softmax, or straight-through.',28),
-    mkBubble('<b>Q17 — model answer.</b> The <i>measure</i> depends on φ. With $z=\\mu+\\sigma\\varepsilon$: $\\nabla_\\phi\\mathbb E_\\varepsilon[r(g(\\varepsilon;\\phi))]=\\mathbb E_\\varepsilon[\\nabla_\\phi r]$ — low-variance MC; the chain rule covers φ appearing twice.',58)
+    mkBubble('<b>Q17 — model answer.</b> The <i>measure</i> depends on φ. With $z=\\mu+\\sigma\\varepsilon$: $∇_\\phi\\mathbb E_\\varepsilon[r(g(\\varepsilon;\\phi))]=\\mathbb E_\\varepsilon[∇_\\phi r]$ — low-variance MC; the chain rule covers φ appearing twice.',58)
   ]
 },
 
@@ -342,7 +342,7 @@ var GROUPS = [
       question:'<b>Q34.</b> Order the VQ-layer operations (slide 74), forward then backward.',
       items:['argmin over K → indices $(n\\cdot h\\cdot w,1)$',
              'Reshape $z_e$: $(n,h,w,d)\\to(n\\cdot h\\cdot w,d)$',
-             'Backward: copy $\\nabla_{z_q}L$ to $z_e$ (straight-through)',
+             'Backward: copy $∇_{z_q}L$ to $z_e$ (straight-through)',
              'Distances to all $K$ codebook vectors $(n\\cdot h\\cdot w,K)$',
              'Reshape back to $z_q$: $(n,h,w,d)$',
              'Look up codebook vectors $e_k$ by index'],
