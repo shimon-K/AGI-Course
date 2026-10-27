@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Latent Variable Models &amp; VAEs — Quiz</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+<link rel="stylesheet" href="youtube-quiz-engine.css" />
+</head>
+<body>
+<div id="header">Machine Learning — Latent Variable Models &amp; VAEs Quiz</div>
+<div id="quiz-frame">
+  <div id="video-wrap">
+    ‹iframe id="yt-player" allow="autoplay"></iframe>
+    <div id="overlay-layer"></div>
+    <div id="pause-notice">PAUSED &mdash; answer the question</div>
+  </div>
+</div>
+<div id="footer">Click ▶ to start · Tab between fields · Enter to submit</div>
+
+<script>
+var VIDEO_ID = '';
+var BACKGROUND = { enabled: true, color: '#ffffff', autoPlay: false };
+var DEFAULT_TIME_GAP = 4;
+var POST_QUIZ_DURATION = 12;
+var MOODLE = { enabled: false };
+
+var BUBBLE_DEFAULTS = { style:'bubble', tail:'left', bg:'rgba(255,248,200,0.97)', borderColor:'#d4a017', color:'#3a2e00', fs:11, padding:8, borderRadius:10 };
+function mkBubble(text, y, opts){ var b={x:70,y:y,w:28,text:text}; for(var k in BUBBLE_DEFAULTS) b[k]=BUBBLE_DEFAULTS[k]; if(opts) for(var k2 in opts) b[k2]=opts[k2]; return b; }
+
+/* small inline helpers for cloze blanks (part of this HTML, not a new JS file) */
+function tf(a){ return {blank:true, type:'select', options:['True','False'], ans:a, w:70}; }
+function num(a,tol,w){ return {blank:true, ans:String(a), tol:tol, w:(w||60)}; }
+function sel(opts,a,w){ return {blank:true, type:'select', options:opts, ans:a, w:(w||130)}; }
+
+var GROUPS = [
+
+/* ===================== G1 ===================== */
+{ label:'GMM & Latent Variable Basics', maxTries:3,
+  questions:[
+    { type:'radio', x:5, y:10, w:62, fs:11,
+      question:'<b>Q1.</b> In the GMM Bayes net $z\\to x$ with $z\\sim\\mathrm{Cat}(\\pi_1,\\dots,\\pi_K)$, which quantity performs (soft) clustering of a new point $x$?',
+      choices:['$p(x\\mid z=k)$ — the component likelihood',
+               '$p(z=k\\mid x)\\propto \\pi_k\\,\\mathcal N(x;\\mu_k,\\Sigma_k)$ — the posterior responsibility',
+               '$p(z=k)=\\pi_k$ — the mixing weight',
+               '$p(x)=\\sum_k \\pi_k\\,\\mathcal N(x;\\mu_k,\\Sigma_k)$ — the marginal'],
+      ans:1 },
+    { type:'cloze', x:5, y:40, w:62, fs:11, lineSpacing:1.7,
+      parts:['<b>Q2.</b> True or False?<br>(a) Maximum-likelihood fitting of a GMM is convex with a unique optimum. ', tf('False'),
+             '<br>(b) The learned $z$ of an unsupervised GMM/VAE is guaranteed to be human-interpretable. ', tf('False'),
+             '<br>(c) A single Gaussian cannot fit the two-cluster data of slide 42, but a 2-component mixture can. ', tf('True')] },
+    { type:'cloze', x:5, y:64, w:62, fs:11, lineSpacing:1.6,
+      parts:['<b>Q3.</b> A GMM with $K=3$ full-covariance components in $\\mathbb R^2$ has ', num(17,0,50),
+             ' free parameters (means + covariances + mixing weights).'] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q1 — B.</b> Clustering = inferring the hidden cause $p(z{=}k|x)$ by Bayes rule (the EM "responsibility"). The likelihood alone ignores $\\pi_k$; the marginal sums out $k$ and loses the assignment.',10),
+    mkBubble('<b>Q2 — F, F, T.</b> The GMM likelihood is highly non-convex (local minima, label switching → restarts). $z$ is only a statistical cause. A unimodal Gaussian wastes mass in the gap between clusters.',40),
+    mkBubble('<b>Q3 — 17.</b> Means 3×2=6; each symmetric 2×2 covariance has 3 → 9; weights sum to 1 → 2. In $d=784$ one covariance alone has 307,720 parameters: GMMs lack power for high-dim data.',64)
+  ]
+},
+
+/* ===================== G2 ===================== */
+{ label:'VAE as an Infinite Mixture', maxTries:3,
+  questions:[
+    { type:'radio', x:5, y:10, w:62, fs:11,
+      question:'<b>Q4.</b> Slide 43: $z\\sim\\mathcal N(0,1)$, $p(x|z)=\\mathcal N(\\mu_\\theta(z),\\Sigma_\\theta(z))$ with neural nets. Which statement about the marginal $p(x)$ is correct?',
+      choices:['It is Gaussian, because a Gaussian prior and Gaussian likelihood are conjugate',
+               'It is a continuous (infinite) mixture of Gaussians — generally non-Gaussian and multimodal',
+               'It is a mixture of exactly $K$ Gaussians, where $K$ is the decoder width',
+               'It equals $p(x\\mid z=0)$ because $z=0$ is the prior mode'],
+      ans:1 },
+    { type:'cloze', x:5, y:42, w:62, fs:11, lineSpacing:1.6,
+      parts:['<b>Q5.</b> With $\\Sigma_\\theta(z)=\\mathrm{diag}(\\exp(\\sigma(Bz+d)))$, $\\sigma$ = sigmoid, every decoder variance lies in the open interval ( ',
+             num(1,0.01,50), ' , ', num(2.718,0.02,60), ' ).'] },
+    { type:'checkbox', x:5, y:56, w:62, fs:11,
+      question:'<b>Q6.</b> Select ALL correct statements about deep latent variable models (slides 41–43).',
+      choices:['Training is unsupervised: only $x$ is observed',
+               'The prior $p(z)$ must stay fixed; it can never be learned',
+               'Sampling is ancestral: $z\\sim p(z)$, then $x\\sim p(x|z)$',
+               'The NN replaces the GMM lookup table $k\\mapsto(\\mu_k,\\Sigma_k)$ by a function $z\\mapsto(\\mu,\\Sigma)$'],
+      ans:[0,2,3] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q4 — B.</b> $p(x)=\\int p(z)\\,\\mathcal N(x;\\mu_\\theta(z),\\Sigma_\\theta(z))\\,dz$: one Gaussian per $z$. Conjugacy needs a <i>linear</i> mean ($Wz+b$, as in PPCA); a nonlinear NN breaks it.',10),
+    mkBubble('<b>Q5 — (1, e≈2.718).</b> Sigmoid ∈ (0,1) ⇒ exp ∈ ($e^0$, $e^1$). Deduction: this decoder can never output a variance below 1 — a design limitation.',42),
+    mkBubble('<b>Q6 — A, C, D.</b> B is false: priors can be learned (hierarchical VAEs, GMVAE, the AR prior of VQ-VAE). The NN generalises a finite table to a continuum of components.',56)
+  ]
+},
+
+/* ===================== G3 ===================== */
+{ label:'Evaluating p(x): Monte Carlo & Importance Sampling', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.6,
+      parts:['<b>Q7.</b> With 20 binary latents, exact $p(x)=\\sum_z p(x,z)$ needs ', num(1048576,0,90),
+             ' terms; with 30 binary latents ≈ ', num(1.07,0.02,55), ' billion terms.'] },
+    { type:'radio', x:5, y:26, w:62, fs:11,
+      question:'<b>Q8.</b> Naive MC $p(x)\\approx|\\mathcal Z|\\tfrac1K\\sum_k p(x,z^{(k)})$ with uniform $z^{(k)}$ fails for the half-occluded MNIST digit because…',
+      choices:['the estimator is biased for any finite $K$',
+               'for almost all random $z$, $p(x|z)\\approx0$; the few $z$ that explain $x$ are rarely hit → enormous variance',
+               'uniform distributions cannot be sampled on a computer',
+               'the logarithm of the estimator is always $+\\infty$'],
+      ans:1 },
+    { type:'radio', x:5, y:57, w:62, fs:11,
+      question:'<b>Q9.</b> Importance sampling: $p(x)=\\mathbb E_{z\\sim q}[p(x,z)/q(z)]$. Which proposal gives a <i>zero-variance</i> estimator?',
+      choices:['$q(z)=p(z)$, the prior','$q(z)$ uniform','$q(z)=p(z\\mid x)$, the true posterior','Any $q$ with heavier tails than $p(z)$'],
+      ans:2 }
+  ],
+  bubbles:[
+    mkBubble('<b>Q7 — 1,048,576; ≈1.07.</b> $2^{20}$ and $2^{30}$ configurations: exponential in the number of latents.',10),
+    mkBubble('<b>Q8 — B.</b> Unbiased but huge variance: $p(z|x)$ concentrates in a tiny region. Fix: sample from a proposal $q(z)$ close to the posterior.',26),
+    mkBubble('<b>Q9 — C.</b> With $q=p(z|x)$, $p(x,z)/q(z)=p(x)$ for every $z$: constant ⇒ zero variance. It is unavailable, so we <i>learn</i> $q$ — the VAE encoder.',57)
+  ]
+},
+
+/* ===================== G4 ===================== */
+{ label:'ELBO, Jensen & the KL Gap', maxTries:3,
+  questions:[
+    { type:'radio', x:5, y:10, w:62, fs:11,
+      question:'<b>Q10.</b> Why does $\\log\\mathbb E_q\\!\\left[\\tfrac{p(x,z)}{q(z)}\\right]\\ge\\mathbb E_q\\!\\left[\\log\\tfrac{p(x,z)}{q(z)}\\right]$ hold?',
+      choices:['Because log is convex (Jensen)','Because log is concave (Jensen)','Because a KL divergence can be negative','Because $q$ is Gaussian'],
+      ans:1 },
+    { type:'cloze', x:5, y:38, w:62, fs:11, lineSpacing:1.7,
+      parts:['<b>Q11.</b> For one image $\\log p_\\theta(x)=-100$ nats and ELBO $=-104.5$. Then $D_{KL}(q\\|p(z|x))=$ ', num(4.5,0.01,55),
+             '.<br>A better encoder (θ unchanged) reduces this gap to 1.2; the new ELBO is ', num(-101.2,0.01,65), '.'] },
+    { type:'checkbox', x:5, y:56, w:62, fs:11,
+      question:'<b>Q12.</b> The encoder ignores $x$ and outputs $q(z|x)=p(z)=\\mathcal N(0,I)$. Select ALL true statements.',
+      choices:['$D_{KL}(q\\|p(z))=0$','The ELBO equals $\\mathbb E_{p(z)}[\\log p_\\theta(x|z)]$','The ELBO is still a valid lower bound on $\\log p_\\theta(x)$','The gap is zero, so the ELBO equals $\\log p_\\theta(x)$'],
+      ans:[0,1,2] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q10 — B.</b> For concave $f$: $f(\\mathbb E[w])\\ge\\mathbb E[f(w)]$. Equality iff $p(x,z)/q(z)$ is constant in $z$, i.e. $q=p(z|x)$.',10),
+    mkBubble('<b>Q11 — 4.5; −101.2.</b> $\\log p(x)=\\text{ELBO}+D_{KL}(q\\|p(z|x))$. Changing only φ leaves $\\log p_\\theta(x)$ fixed, so the ELBO rises by exactly the KL reduction.',38),
+    mkBubble('<b>Q12 — A, B, C.</b> Any $q$ gives a valid bound. The gap $D_{KL}(p(z)\\|p(z|x))$ vanishes only if $z$ carries no information about $x$ — i.e. <i>posterior collapse</i>.',56)
+  ]
+},
+
+/* ===================== G5 ===================== */
+{ label:'EM-like Bounds & Stochastic VI', maxTries:3,
+  questions:[
+    { type:'radio', x:5, y:10, w:62, fs:11,
+      question:'<b>Q13.</b> Slide 48: the red bound $\\mathcal L(x;\\theta,\\phi_1)$ touches $\\log p(x;\\theta)$ at $\\theta_n$; $\\theta_{n+1}$ maximises it. What guarantees $\\log p(x;\\theta_{n+1})\\ge\\log p(x;\\theta_n)$?',
+      choices:['Touching means $q$ = exact posterior at $\\theta_n$, so $\\log p(\\theta_{n+1})\\ge\\mathcal L(\\theta_{n+1})\\ge\\mathcal L(\\theta_n)=\\log p(\\theta_n)$',
+               'The bound is convex in $\\theta$',
+               'The orange bound always lies above the red one',
+               'Nothing — maximising a bound can never improve the likelihood'],
+      ans:0 },
+    { type:'ordering', x:5, y:45, w:62, fs:11,
+      question:'<b>Q14.</b> Order the steps of (non-amortised) stochastic variational inference, slide 49.',
+      items:['Update $\\theta\\leftarrow\\theta+\\eta\\nabla_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$',
+             'Initialise $\\theta$ and $\\phi^1,\\dots,\\phi^M$',
+             'Repeat $\\phi^i\\leftarrow\\phi^i+\\eta\\nabla_{\\phi^i}\\mathcal L$ until convergence ($\\theta$ fixed)',
+             'Sample a data point $x^i$ from $\\mathcal D$',
+             'Compute $\\nabla_\\theta\\mathcal L(x^i;\\theta,\\phi^{i*})$ ($\\phi$ fixed)'],
+      ans:[1,3,2,4,0] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q13 — A.</b> The EM/MM argument. With an approximate, amortised $q$ the bound does not touch, so VAE training has no monotonicity guarantee — it only raises a lower bound.',10),
+    mkBubble('<b>Q14 — init → sample $x^i$ → optimise $\\phi^i$ → $\\nabla_\\theta$ → update θ.</b> The inner loop and $M$ separate $\\phi^i$ make SVI unscalable → amortised inference.',45)
+  ]
+},
+
+/* ===================== G6 ===================== */
+{ label:'Reparameterization Trick', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q15.</b> $z=\\mu+\\sigma\\varepsilon$ with $\\mu=0.5,\\ \\sigma=2,\\ \\varepsilon=-0.3$. Then $z=$ ', num(-0.1,0.01,55),
+             ', $\\partial z/\\partial\\mu=$ ', num(1,0.01,45), ', $\\partial z/\\partial\\sigma=$ ', num(-0.3,0.01,50),
+             '.<br>For $r(z)=z^2$: $\\partial r/\\partial\\sigma=$ ', num(0.06,0.005,55), '.'] },
+    { type:'radio', x:5, y:28, w:62, fs:11,
+      question:'<b>Q16.</b> For which $q(z;\\phi)$ does plain reparameterisation $z=g(\\varepsilon;\\phi)$ with differentiable $g$ <u>not</u> work?',
+      choices:['Gaussian $\\mathcal N(\\mu,\\sigma^2)$','Laplace (location–scale family)','Exponential, via inverse CDF $z=-\\log(u)/\\lambda$','Categorical over $K$ classes'],
+      ans:3 },
+    { type:'cloze', x:5, y:58, w:62, fs:11, lineSpacing:1.5,
+      parts:['<b>Q17.</b> Slide 49 flags $\\nabla_\\phi\\mathbb E_{q(z;\\phi)}[\\log p(z,x)-\\log q(z;\\phi)]$ as a "Problem!". Explain why, and how reparameterisation fixes it.<br>',
+             {blank:true, type:'open', w:520, h:55,
+              ans:'The sampling distribution itself depends on phi, so we cannot just sample z from q and differentiate the integrand: the gradient includes the integral of grad_phi q(z;phi) times r(z,phi), which is not an expectation under q (REINFORCE rewrites it using grad log q, but with high variance). Reparameterisation writes z = g(eps;phi) = mu + sigma*eps with eps ~ N(0,I) independent of phi, so E_q[r] = E_eps[r(g(eps;phi),phi)] and the gradient moves inside the expectation: E_eps[grad_phi r(g(eps;phi),phi)], estimated by Monte Carlo with low variance. r depends on phi twice (through z and through log q), handled by the chain rule.',
+              placeholder:'Write your answer here. It will be evaluated by AI…'}] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q15 — −0.1; 1; −0.3; 0.06.</b> $\\partial z/\\partial\\sigma=\\varepsilon$, so $\\partial r/\\partial\\sigma=2z\\varepsilon=2(-0.1)(-0.3)=0.06$.',10),
+    mkBubble('<b>Q16 — D.</b> A discrete sample is a step function of φ (zero gradient almost everywhere). Use REINFORCE, Gumbel-softmax, or straight-through.',28),
+    mkBubble('<b>Q17 — model answer.</b> The <i>measure</i> depends on φ. With $z=\\mu+\\sigma\\varepsilon$: $\\nabla_\\phi\\mathbb E_\\varepsilon[r(g(\\varepsilon;\\phi))]=\\mathbb E_\\varepsilon[\\nabla_\\phi r]$ — low-variance MC; the chain rule covers φ appearing twice.',58)
+  ]
+},
+
+/* ===================== G7 ===================== */
+{ label:'Amortized Inference & the Amortization Gap', maxTries:3,
+  questions:[
+    { type:'radio', x:5, y:10, w:62, fs:11,
+      question:'<b>Q18.</b> Amortisation replaces per-point $\\phi^i$ with an encoder $f_\\lambda(x)$. Compared with optimising each $\\phi^i$ to convergence (same Gaussian family), the amortised ELBO is…',
+      choices:['always higher, because the encoder shares statistical strength',
+               'at most equal; the difference is the <i>amortization gap</i>',
+               'exactly equal for any encoder architecture',
+               'undefined, because an amortised $q$ is not a distribution'],
+      ans:1 },
+    { type:'label', x:5, y:44, w:62, fs:11,
+      text:'<b>Q19.</b> Match each quantity / remedy with the gap it concerns ($q^*$ = best $q$ in the family).' },
+    { type:'match', x:5, y:49, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
+      left:['$\\log p(x)-\\mathcal L[q^*]$','$\\mathcal L[q^*]-\\mathcal L[q_\\phi]$','Richer family (flows, full covariance)','Larger encoder / a few SVI refinement steps'],
+      right:['Amortization gap','Approximation gap'],
+      ans:[1,0,1,0] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q18 — B.</b> $f_\\lambda$ can only reach a subset of per-point optima. Cremer et al. (2018): inference gap = approximation gap + amortization gap; a larger encoder mainly shrinks the latter.',10),
+    mkBubble('<b>Q19 — Approx, Amort, Approx, Amort.</b> The family limits how close <i>any</i> $q$ gets to $p(z|x)$; the encoder limits finding the best member per $x$ (semi-amortised VAEs refine it with SVI).',44)
+  ]
+},
+
+/* ===================== G8 ===================== */
+{ label:'ELBO Decomposition & Closed-Form KL', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q20.</b> Using $D_{KL}=\\tfrac12\\sum_j(\\mu_j^2+\\sigma_j^2-\\log\\sigma_j^2-1)$: $\\mu=1,\\sigma=1$: ', num(0.5,0.01,50),
+             '; $\\mu=0,\\sigma=e^{-1}$: ', num(0.568,0.005,60),
+             '<br>2-D code $\\mu=(1,0)$, $\\sigma=(1,e^{-1})$: ', num(1.068,0.01,60), ' nats.'] },
+    { type:'slider', x:5, y:30, w:62, fs:11,
+      question:'<b>Q21.</b> Loss $=\\|x-\\mu_\\theta(z)\\|^2+D_{KL}$ equals the negative ELBO (up to a constant) for a Gaussian decoder $\\mathcal N(\\mu_\\theta(z),s^2I)$ with $s^2=$ ?',
+      min:0, max:2, step:0.05, ans:0.5, tol:0.05, unit:'' },
+    { type:'cloze', x:5, y:52, w:62, fs:11, lineSpacing:1.7,
+      parts:['<b>Q22.</b> True or False?<br>(a) With a fixed $\\mathcal N(0,I)$ prior, the KL term has zero gradient w.r.t. decoder parameters θ. ', tf('True'),
+             '<br>(b) $\\mathbb E_q[\\log p(x,z)]+H(q)$ and $\\mathbb E_q[\\log p(x|z)]-D_{KL}(q\\|p(z))$ are the same quantity. ', tf('True'),
+             '<br>(c) The reconstruction term alone pushes the encoder σ toward 1. ', tf('False')] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q20 — 0.5; 0.568; 1.068.</b> ½(1+1−0−1)=0.5; ½(0+e⁻²+2−1)=0.568. Diagonal Gaussians factorise, so the KLs add.',10),
+    mkBubble('<b>Q21 — 0.5.</b> $-\\log p(x|z)=\\|x-\\mu\\|^2/(2s^2)+$const, equal to MSE iff $2s^2=1$. Generally MSE + β·KL ⇔ $s^2=\\beta/2$: decoder variance and β are one knob.',30),
+    mkBubble('<b>Q22 — T, T, F.</b> θ appears only in $p(x|z)$. $\\log p(x,z)=\\log p(z)+\\log p(x|z)$ links the two forms. Reconstruction alone favours σ→0 (deterministic $z$).',52)
+  ]
+},
+
+/* ===================== G9 ===================== */
+{ label:'Reading the Latent-Space Figures', maxTries:3,
+  questions:[
+    { type:'label', x:5, y:9, w:62, fs:11,
+      text:'<b>Q23.</b> Match each training setting (2-D MNIST latents, slide 57) to its scatter plot.' },
+    { type:'match', x:5, y:14, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
+      left:['Reconstruction loss only','KL loss only','Reconstruction + KL (standard VAE)','β-VAE with β → ∞'],
+      right:['Separated, irregular clusters with large gaps; prior samples often decode to garbage',
+             'All classes overlap in one blob at the origin; decoder outputs an "average" digit',
+             'Clusters packed near the origin with smooth transitions between classes'],
+      ans:[0,1,2,1] },
+    { type:'radio', x:5, y:50, w:62, fs:11,
+      question:'<b>Q24.</b> In the KL figure (red ellipses inside the blue $\\mathcal N(0,I)$ circle) you instead see tiny dots scattered far outside the circle. Most likely cause?',
+      choices:['KL weight too large','KL weight ≈ 0 — the encoder behaves like a deterministic AE','Prior variance too large','Too many MC samples per data point'],
+      ans:1 }
+  ],
+  bubbles:[
+    mkBubble('<b>Q23 — A, B, C, B.</b> β→∞ makes KL dominate, so $q(z|x)\\to p(z)$ for every $x$: the same picture as "KL only" — posterior collapse.',9),
+    mkBubble('<b>Q24 — B.</b> Without KL pressure σ→0 (dots) and means drift. The union of ellipses no longer fills the prior, so $z\\sim\\mathcal N(0,I)$ lands in holes → garbage samples.',50)
+  ]
+},
+
+/* ===================== G10 ===================== */
+{ label:'Attribute Vectors & Hierarchical VAEs', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q25.</b> Mean latent of smiling faces = (2, 1); of non-smiling faces = (0.5, 1.5). Smile vector = (', num(1.5,0.01,45), ', ', num(-0.5,0.01,50),
+             ').<br>Adding it to a neutral face z = (0.2, 0.3) gives (', num(1.7,0.01,45), ', ', num(-0.2,0.01,50), ').'] },
+    { type:'radio', x:5, y:29, w:62, fs:11,
+      question:'<b>Q26.</b> Which pair of factorisations defines a <i>Markovian</i> hierarchical VAE with latents $z_{1:T}$?',
+      choices:['$p=p(z_T)\\,p_\\theta(x|z_1)\\prod_{t=2}^{T}p_\\theta(z_{t-1}|z_t)$; $\\ q=q_\\phi(z_1|x)\\prod_{t=2}^{T}q_\\phi(z_t|z_{t-1})$',
+               '$p=p(z_1)\\prod_t p_\\theta(z_t|z_{1:t-1})\\,p_\\theta(x|z_{1:T})$; $\\ q=\\prod_t q_\\phi(z_t|x)$',
+               '$p=p(z_T)\\,p_\\theta(x|z_{1:T})$; $\\ q=q_\\phi(z_T|x)$',
+               '$p=\\prod_t p(z_t)\\,p_\\theta(x|z_T)$; $\\ q=q_\\phi(z_1|x)\\prod_t q_\\phi(z_t|x)$'],
+      ans:0 },
+    { type:'cloze', x:5, y:62, w:62, fs:11, lineSpacing:1.7,
+      parts:['<b>Q27.</b> (a) An MHVAE with $T=1$ reduces to the vanilla VAE ELBO. ', tf('True'),
+             '<br>(b) In a variational diffusion model the encoder $q(z_t|z_{t-1})$ is learned like a VAE encoder. ', tf('False'),
+             '<br>(c) NVAE generates top-down and infers with a bottom-up + top-down encoder. ', tf('True')] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q25 — (1.5, −0.5); (1.7, −0.2).</b> Attribute vector = mean(with) − mean(without), like word2vec arithmetic; it relies on a smooth latent space.',10),
+    mkBubble('<b>Q26 — A.</b> Each step conditions only on its neighbour: $z_T\\to\\dots\\to z_1\\to x$ and $x\\to z_1\\to\\dots\\to z_T$ — a "recursive VAE", the basis of diffusion models.',29),
+    mkBubble('<b>Q27 — T, F, T.</b> Luo (2022): a VDM is an MHVAE with latent dim = data dim and a <i>fixed</i> Gaussian encoder; only the decoder is learned.',62)
+  ]
+},
+
+/* ===================== G11 ===================== */
+{ label:'β-VAE, Posterior Collapse & AR vs VAE', maxTries:3,
+  questions:[
+    { type:'label', x:5, y:9, w:62, fs:11,
+      text:'<b>Q28.</b> Match each β in $\\mathbb E_q[\\log p(x|z)]-\\beta D_{KL}$ with its typical behaviour.' },
+    { type:'match', x:5, y:14, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
+      left:['β = 0','β = 1','β = 4','β → ∞'],
+      right:['Standard VAE: the exact ELBO','Posterior collapse: z ignored, q = prior','Plain autoencoder; irregular latent space','More disentangled factors, blurrier reconstructions'],
+      ans:[2,0,3,1] },
+    { type:'radio', x:5, y:40, w:62, fs:11,
+      question:'<b>Q29.</b> You pair a VAE encoder with a powerful PixelCNN decoder and observe KL ≈ 0 for every $x$. Best explanation?',
+      choices:['The reparameterisation trick fails for PixelCNNs',
+               'The AR decoder models $x$ alone, so the cheapest ELBO optimum sets $q(z|x)=p(z)$ (posterior collapse)',
+               'The prior variance is too small',
+               'The encoder learning rate is too low'],
+      ans:1 },
+    { type:'cloze', x:5, y:68, w:62, fs:11, lineSpacing:1.5,
+      parts:['<b>Q30.</b> A phone app must generate faces in real time and let users edit "smile/glasses". AR model or VAE? Justify.<br>',
+             {blank:true, type:'open', w:520, h:45,
+              ans:'VAE. Generation is a single decoder forward pass (very fast), whereas AR models generate pixel by pixel sequentially (slow). The VAE also gives rich latent codes that support attribute vectors (add the smile vector) and interpolation; AR models have no explicit latent code. Downsides: VAE samples are often blurrier and it only maximises a lower bound; a hybrid (VQ-VAE + AR prior) trades speed for quality.',
+              placeholder:'Write your answer here. It will be evaluated by AI…'}] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q28 — 0→AE, 1→ELBO, 4→disentangled, ∞→collapse.</b> Higgins et al.: β>1 tightens the bottleneck, favouring factorised codes at the cost of detail.',9),
+    mkBubble('<b>Q29 — B.</b> Encoding costs KL nats while a strong decoder gains little. Remedies: KL annealing, free bits, weaker decoder, or VQ latents (KL "constant and equal to log K", which van den Oord et al. say circumvents posterior collapse).',40),
+    mkBubble('<b>Q30 — VAE.</b> One fast decoder pass + latent codes for attribute arithmetic. AR: exact likelihood and sharper samples, but slow and no latent code.',68)
+  ]
+},
+
+/* ===================== G12 ===================== */
+{ label:'Discrete VAEs, Gumbel-Softmax & dVAE vs VQ', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q31.</b> Uniform prior $1/K$, so KL $=\\log K-H(q)$. One-hot $q$, $K=512$: ', num(6.238,0.01,60),
+             ' nats; uniform $q$: ', num(0,0.001,45), '<br>$K=4$, $q=(0.5,0.5,0,0)$: ', num(0.693,0.005,60), ' nats.'] },
+    { type:'cloze', x:5, y:28, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q32.</b> Gumbel-max: $\\log f=(\\ln0.5,\\ln0.3,\\ln0.2)$, noise $g=(0.1,1.0,0.2)$. Selected category (1/2/3): ', num(2,0,40),
+             '<br>The same noise with Gumbel-softmax at $\\tau\\to0$ gives a one-hot at category ', num(2,0,40), '.'] },
+    { type:'cloze', x:5, y:48, w:62, fs:11, lineSpacing:1.9,
+      parts:['<b>Q33.</b> (a) As $\\tau\\to\\infty$, each component of a $K=4$ Gumbel-softmax sample → ', num(0.25,0.01,55),
+             '<br>(b) The DALL·E-1 dVAE discretises via ', sel(['nearest neighbour','Gumbel-softmax'],'Gumbel-softmax',140),
+             '; VQ-VAE sends gradients to the encoder via ', sel(['straight-through','score function'],'straight-through',130),
+             '<br>(c) In VQ-VAE training the KL term is usually ', sel(['dropped','modelled'],'dropped',100), '.'] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q31 — 6.238; 0; 0.693.</b> ln 512 = 9 ln 2; entropies 0, ln K, ln 2.',10),
+    mkBubble('<b>Q32 — 2; 2.</b> Scores −0.593, −0.204, −1.409 → argmax 2. At τ→0 softmax = argmax, but it is differentiable for τ>0.',28),
+    mkBubble('<b>Q33 — 0.25; Gumbel; ST; dropped.</b> Jang et al.: uniform as τ→∞, one-hot as τ→0 (low τ ⇒ high-variance gradients, so anneal). dVAE = weighted die; VQ = pointer snapping to a pin; KL = log K is constant.',48)
+  ]
+},
+
+/* ===================== G13 ===================== */
+{ label:'VQ-VAE: Layer, Losses & Gradients', maxTries:3,
+  questions:[
+    { type:'ordering', x:5, y:10, w:62, fs:11,
+      question:'<b>Q34.</b> Order the VQ-layer operations (slide 74), forward then backward.',
+      items:['argmin over K → indices $(n\\cdot h\\cdot w,1)$',
+             'Reshape $z_e$: $(n,h,w,d)\\to(n\\cdot h\\cdot w,d)$',
+             'Backward: copy $\\nabla_{z_q}L$ to $z_e$ (straight-through)',
+             'Distances to all $K$ codebook vectors $(n\\cdot h\\cdot w,K)$',
+             'Reshape back to $z_q$: $(n,h,w,d)$',
+             'Look up codebook vectors $e_k$ by index'],
+      ans:[1,3,0,5,4,2] },
+    { type:'label', x:5, y:51, w:62, fs:11,
+      text:'<b>Q35.</b> Which parameters does each VQ-VAE loss term update? (many-to-one allowed)' },
+    { type:'match', x:5, y:56, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
+      left:['$\\log p(x|z_q(x))$ (reconstruction)','$\\|\\mathrm{sg}[z_e(x)]-e\\|^2$ (codebook)','$\\beta\\|z_e(x)-\\mathrm{sg}[e]\\|^2$ (commitment)','$D_{KL}=\\log K$'],
+      right:['Encoder only','Decoder and encoder','Codebook only','Nothing (constant)'],
+      ans:[1,2,0,3] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q34 — reshape → distances → argmin → lookup → reshape → copy grads.</b> argmin has no gradient, so the backward pass treats quantisation as identity ($z_q\\approx z_e$).',10),
+    mkBubble('<b>Q35 — dec+enc, codebook, encoder, nothing.</b> van den Oord et al.: codebook vectors get no gradient from reconstruction (straight-through), hence the codebook loss; commitment loss makes the encoder commit so its output "does not grow" (§3.2). β = 0.25.',51)
+  ]
+},
+
+/* ===================== G14 ===================== */
+{ label:'VQ-VAE Shapes, Priors & Dead Codes', maxTries:3,
+  questions:[
+    { type:'cloze', x:5, y:10, w:62, fs:11, lineSpacing:1.8,
+      parts:['<b>Q36.</b> $n=8$ images, latent grid 32×32, $d=64$, $K=512$. Flattened $z_e$ has ', num(8192,0,65),
+             ' rows; distance matrix 8192 × ', num(512,0,55), '<br>One image costs ', num(9216,0,65),
+             ' bits of indices, a ', num(42.7,0.2,55), '× compression of a 128×128×3 8-bit image.'] },
+    { type:'radio', x:5, y:29, w:62, fs:11,
+      question:'<b>Q37.</b> Why is a PixelCNN prior over the indices fitted <i>after</i> VQ-VAE training, instead of sampling from the uniform prior?',
+      choices:['The uniform prior was only a training device (constant KL); independent uniform indices ignore spatial structure → incoherent images',
+               'PixelCNN cannot be trained jointly with any network',
+               'The codebook is discarded after training',
+               'The uniform prior makes the decoder non-deterministic'],
+      ans:0 },
+    { type:'cloze', x:5, y:63, w:62, fs:11, lineSpacing:1.5,
+      parts:['<b>Q38.</b> Only 40 of 512 codes are ever selected during training. Explain why ("dead codes") and give two remedies.<br>',
+             {blank:true, type:'open', w:520, h:45,
+              ans:'A code is only updated (codebook loss or EMA) when it is the nearest neighbour of some encoder output. Codes initialised far from the encoder distribution are never selected, never move and stay dead, while frequently used codes are reinforced (rich-get-richer); without the commitment loss the encoder outputs can also drift away. Remedies: EMA / k-means codebook updates, k-means initialisation from encoder outputs, restarting dead codes at random encoder outputs, low-dimensional or l2-normalised codes, entropy/usage regularisation, or FSQ/LFQ quantisers.',
+              placeholder:'Write your answer here. It will be evaluated by AI…'}] }
+  ],
+  bubbles:[
+    mkBubble('<b>Q36 — 8192; 512; 9216; ≈42.7.</b> 8·32·32 rows; 1024 indices × 9 bits; 393,216 / 9216 = 42.67 (van den Oord et al. §4.2 report "≈ 42.6 in bits").',10),
+    mkBubble('<b>Q37 — A.</b> The true distribution over indices is far from uniform and spatially correlated. van den Oord et al. §3.3 keep the prior uniform during training, then fit an AR prior (PixelCNN for images, WaveNet for audio); VQ-VAE-2: top/bottom hierarchy.',29),
+    mkBubble('<b>Q38 — model answer.</b> Only the nearest code is pulled, so far-initialised codes never move. Fixes: k-means init, EMA updates, restart dead codes from encoder outputs, entropy penalties.',63)
+  ]
+}
+
+];
+</script>
+
+<script>
+function loadEngine(){ var s=document.createElement('script'); s.src='youtube-quiz-engine.js'; document.body.appendChild(s); }
+if(document.readyState==='complete'){ setTimeout(loadEngine,100); }
+else { window.addEventListener('load', function(){ setTimeout(loadEngine,100); }); }
+</script>
+</body>
+</html>
