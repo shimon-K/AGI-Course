@@ -181,7 +181,7 @@ var GROUPS = [
       ans:3 },
     { type:'cloze', x:5, y:58, w:62, fs:11, lineSpacing:1.5,
       parts:['<b>Q17.</b> Slide 49 flags $∇_\\phi\\mathbb E_{q(z;\\phi)}[\\log p(z,x)-\\log q(z;\\phi)]$ as a "Problem!". Explain why, and how reparameterisation fixes it.<br>',
-             {blank:true, type:'open', w:520, h:55,
+             {blank:true, type:'open', w:520, h:75,
               ans:'The sampling distribution itself depends on phi, so we cannot just sample z from q and differentiate the integrand: the gradient includes the integral of grad_phi q(z;phi) times r(z,phi), which is not an expectation under q (REINFORCE rewrites it using grad log q, but with high variance). Reparameterisation writes z = g(eps;phi) = mu + sigma*eps with eps ~ N(0,I) independent of phi, so E_q[r] = E_eps[r(g(eps;phi),phi)] and the gradient moves inside the expectation: E_eps[grad_phi r(g(eps;phi),phi)], estimated by Monte Carlo with low variance. r depends on phi twice (through z and through log q), handled by the chain rule.',
               placeholder:'Write your answer here. It will be evaluated by AI…'}] }
   ],
@@ -302,7 +302,7 @@ var GROUPS = [
       ans:1 },
     { type:'cloze', x:5, y:68, w:62, fs:11, lineSpacing:1.5,
       parts:['<b>Q30.</b> A phone app must generate faces in real time and let users edit "smile/glasses". AR model or VAE? Justify.<br>',
-             {blank:true, type:'open', w:520, h:45,
+             {blank:true, type:'open', w:520, h:75,
               ans:'VAE. Generation is a single decoder forward pass (very fast), whereas AR models generate pixel by pixel sequentially (slow). The VAE also gives rich latent codes that support attribute vectors (add the smile vector) and interpolation; AR models have no explicit latent code. Downsides: VAE samples are often blurrier and it only maximises a lower bound; a hybrid (VQ-VAE + AR prior) trades speed for quality.',
               placeholder:'Write your answer here. It will be evaluated by AI…'}] }
   ],
@@ -347,9 +347,9 @@ var GROUPS = [
              'Reshape back to $z_q$: $(n,h,w,d)$',
              'Look up codebook vectors $e_k$ by index'],
       ans:[1,3,0,5,4,2] },
-    { type:'label', x:5, y:61, w:62, fs:11,
+    { type:'label', x:5, y:63, w:62, fs:11,
       text:'<b>Q35.</b> Which parameters does each VQ-VAE loss term update? (many-to-one allowed)' },
-    { type:'match', x:5, y:65, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
+    { type:'match', x:5, y:66, w:520, fs:10, dotSize:9, dotGap:7, colGap:40,
       left:['$\\log p(x|z_q(x))$ (reconstruction)','$\\|\\mathrm{sg}[z_e(x)]-e\\|^2$ (codebook)','$\\beta\\|z_e(x)-\\mathrm{sg}[e]\\|^2$ (commitment)','$D_{KL}=\\log K$'],
       right:['Encoder only','Decoder and encoder','Codebook only','Nothing (constant)'],
       ans:[1,2,0,3] }
@@ -376,7 +376,7 @@ var GROUPS = [
       ans:0 },
     { type:'cloze', x:5, y:63, w:62, fs:11, lineSpacing:1.5,
       parts:['<b>Q38.</b> Only 40 of 512 codes are ever selected during training. Explain why ("dead codes") and give two remedies.<br>',
-             {blank:true, type:'open', w:520, h:75,
+             {blank:true, type:'open', w:520, h:85,
               ans:'A code is only updated (codebook loss or EMA) when it is the nearest neighbour of some encoder output. Codes initialised far from the encoder distribution are never selected, never move and stay dead, while frequently used codes are reinforced (rich-get-richer); without the commitment loss the encoder outputs can also drift away. Remedies: EMA / k-means codebook updates, k-means initialisation from encoder outputs, restarting dead codes at random encoder outputs, low-dimensional or l2-normalised codes, entropy/usage regularisation, or FSQ/LFQ quantisers.',
               placeholder:'Write your answer here. It will be evaluated by AI…'}] }
   ],
