@@ -161,7 +161,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: $-\\log 4\\approx-1.386$.</b> $\\mathbb{E}[\\log\\tfrac12]+\\mathbb{E}[\\log\\tfrac12]=-2\\log 2$. In general $C(G)=2\\,JSD(p_{data}\\|p_G)-\\log 4$, which is smallest when $JSD=0$.', 10),
-    mkBubble('<b>Answer: current state → update D → update G → convergence.</b> (a) Black dots are $p_{data}$, green is $p_G$, blue dashed is $D$. (b) $D$ moves toward $D^*$. (c) $\\nabla D$ moves $G(z)$ toward real regions (arrows z→x). (d) $p_G=p_{data}$ and $D\\equiv\\tfrac12$.', 35),
+    mkBubble('<b>Answer: current state → update D → update G → convergence.</b> (a) Black dots are $p_{data}$, green is $p_G$, blue dashed is $D$. (b) $D$ moves toward $D^*$. (c) $\\nabla D$ moves $G(z)$ toward real regions (arrows z→x). (d) $p_G=p_{data}$ and $D\\equiv\\tfrac12$.', 32),
     mkBubble('<b>Answer: 0.</b> With disjoint supports $JSD=\\log 2$ (its maximum), so $C(G)=2\\log 2-\\log 4=0$. Moving $G$ slightly does not change this value, so there is no useful gradient. This motivates WGAN (slide 132). The theory also assumes $D$ is optimal over all functions, which real networks are not.', 56)
   ]
 },
@@ -198,7 +198,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 9.</b> $1/(1-D)=1.11$ versus $1/D=10$, a ratio of 9. With respect to the logit $a$ ($D=\\sigma(a)$) the gradients are $-D=-0.1$ versus $-(1-D)=-0.9$, again a ratio of 9. As $D\\to0$ the minimax gradient vanishes, which is the flat blue curve.', 10),
-    mkBubble('<b>Answer: 1, 2, 3.</b> Only $G$’s loss changes: it minimizes $-\\log D(G(z))$ instead of $\\log(1-D(G(z)))$. Both push $D(G(z))$ up and share the fixed point, but the players no longer optimize one shared $V$, so the game is non-zero-sum. The NS loss does not cure mode collapse.', 36),
+    mkBubble('<b>Answer: 1, 2, 3.</b> Only $G$’s loss changes: it minimizes $-\\log D(G(z))$ instead of $\\log(1-D(G(z)))$. Both push $D(G(z))$ up and share the fixed point, but the players no longer optimize one shared $V$, so the game is non-zero-sum. The NS loss does not cure mode collapse.', 33),
     mkBubble('<b>Answer: A.</b> The JSD interpretation needs $D=D^*_G$, and $k$ inner steps approximate that (Goodfellow used $k=1$). A $D$ that is too strong saturates and starves $G$ of gradient, so this is a balance and a larger $k$ is not always better.', 61)
   ]
 },
@@ -297,7 +297,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer:</b> $u\\log u$→KL, $-\\log u$→reverse KL, $(u-1)^2$→Pearson $\\chi^2$, $\\tfrac12|u-1|$→TV, $(\\sqrt u-1)^2$→Hellinger². All are convex with $f(1)=0$, so Jensen gives $D_f\\ge0$ and $D_f(p\\|p)=0$.', 10),
-    mkBubble('<b>Answer: $e^{t-1}$.</b> Setting $\\partial_u(ut-u\\log u)=t-\\log u-1=0$ gives $u=e^{t-1}$, and the value is $ut-u(t-1)=u=e^{t-1}$. So the KL-GAN critic maximizes $\\mathbb{E}_p[T]-\\mathbb{E}_q[e^{T-1}]$. The last option is the conjugate of $-\\log u$.', 44)
+    mkBubble('<b>Answer: $e^{t-1}$.</b> Setting $\\partial_u(ut-u\\log u)=t-\\log u-1=0$ gives $u=e^{t-1}$, and the value is $ut-u(t-1)=u=e^{t-1}$. So the KL-GAN critic maximizes $\\mathbb{E}_p[T]-\\mathbb{E}_q[e^{T-1}]$. The last option is the conjugate of $-\\log u$.', 52)
   ]
 },
 
@@ -345,7 +345,7 @@ var GROUPS = [
         { blank:true, ans:'0.5', w:50, fs:10 },
         '.'
       ] },
-    { type:'slider', x:WIDGET_X, y:40, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:36, w:QW, fs:10,
       question:'<b>Q2.</b> New case (1-D): $W_1\\big(\\mathcal{N}(2,1),\\,\\mathcal{N}(-1.5,1)\\big)$ = ?',
       min:0, max:6, step:0.1, ans:3.5, tol:0.05, unit:'' },
     { type:'radio', x:WIDGET_X, y:60, w:QW, fs:10,
@@ -360,7 +360,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: ∞ · log 2 · 0.5.</b> For any θ≠0 the supports are disjoint, so KL blows up and JSD is stuck at log 2, a constant with zero gradient. The earth-mover cost is mass 1 × distance |θ|, which is continuous in θ.', 10),
-    mkBubble('<b>Answer: 3.5.</b> With equal variances the optimal plan is the translation $x\\mapsto x-3.5$, so every unit of mass moves $|\\mu_1-\\mu_2|=3.5$. In 1-D, $W_1=\\int|F_1-F_2|\\,dx$.', 38),
+    mkBubble('<b>Answer: 3.5.</b> With equal variances the optimal plan is the translation $x\\mapsto x-3.5$, so every unit of mass moves $|\\mu_1-\\mu_2|=3.5$. In 1-D, $W_1=\\int|F_1-F_2|\\,dx$.', 34),
     mkBubble('<b>Answer: A.</b> $G$ learns through $\\nabla_x D$ at its samples. A saturated sigmoid is flat near +5, so the gradients vanish. The 1-Lipschitz critic has slope ≈1, so it still says “move left” when the distributions do not overlap. This gives more stable training and less mode collapse.', 60)
   ]
 },
@@ -394,7 +394,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 1, 2, 3.</b> Arjovsky et al. (RMSProp, lr 5e-5) call clipping “a clearly terrible way to enforce a Lipschitz constraint”. Clipping biases the critic toward overly simple functions, and WGAN-GP (Adam, λ=10) fixes this. The critic outputs an unbounded score, not a probability.', 10),
-    mkBubble('<b>Answer: B.</b> At the equilibrium the Jacobian has purely imaginary eigenvalues $\\pm f^{\\prime}(0)i$. The continuous dynamics circle the equilibrium, and each Euler step multiplies the radius by $\\sqrt{1+h^2f^{\\prime}(0)^2}>1$ (Mescheder et al., 2018). Gradient penalties or instance noise restore convergence.', 50)
+    mkBubble('<b>Answer: B.</b> At the equilibrium the Jacobian has purely imaginary eigenvalues $\\pm f^{\\prime}(0)i$. The continuous dynamics circle the equilibrium, and each Euler step multiplies the radius by $\\sqrt{1+h^2f^{\\prime}(0)^2}>1$ (Mescheder et al., 2018). Gradient penalties or instance noise restore convergence.', 54)
   ]
 },
 
@@ -471,7 +471,7 @@ var GROUPS = [
   bubbles: [
     mkBubble('<b>Answer: B.</b> The inner product scores how well the label agrees with the features, while the realism term stays high for a real-looking dog. $G$ is rewarded only for images that are realistic <i>and</i> match the class. BigGAN uses this design, in contrast to concatenation or AC-GAN.', 10),
     mkBubble('<b>Answer: 5120.</b> There is a separate $\\gamma_j^y,\\beta_j^y$ for each channel $j$ and label $y$: $2\\times256\\times10$. The statistics $\\mu_j,\\sigma_j$ are shared and only the affine modulation depends on $y$, the same idea as AdaIN in StyleGAN.', 41),
-    mkBubble('<b>Model answer:</b> A text encoder produces $y$. Feed $y$ to $G$ at the input <i>and</i> at many layers (CBN/AdaIN), and condition $D$ with the projection $\\mathrm{embed}(y)^\\top\\phi(x)$. Train $D$ on real image + matching text (real), $G(z,y)$ + text (fake) and real image + <i>mismatched</i> text (fake).', 58)
+    mkBubble('<b>Model answer:</b> A text encoder produces $y$. Feed $y$ to $G$ at the input <i>and</i> at many layers (CBN/AdaIN), and condition $D$ with the projection $\\mathrm{embed}(y)^\\top\\phi(x)$. Train $D$ on real image + matching text (real), $G(z,y)$ + text (fake) and real image + <i>mismatched</i> text (fake).', 62)
   ]
 },
 
