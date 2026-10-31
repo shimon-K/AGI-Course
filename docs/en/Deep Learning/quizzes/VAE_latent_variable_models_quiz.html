@@ -91,8 +91,8 @@ var GROUPS = [
   ],
   bubbles:[
     mkBubble('<b>Q4 — B.</b> $p(x)=\\int p(z)\\,\\mathcal N(x;\\mu_\\theta(z),\\Sigma_\\theta(z))\\,dz$: one Gaussian per $z$. Conjugacy needs a <i>linear</i> mean ($Wz+b$, as in PPCA); a nonlinear NN breaks it.',10),
-    mkBubble('<b>Q5 — (1, e≈2.718).</b> Sigmoid ∈ (0,1) ⇒ exp ∈ ($e^0$, $e^1$). Deduction: this decoder can never output a variance below 1 — a design limitation.',42),
-    mkBubble('<b>Q6 — A, C, D.</b> B is false: priors can be learned (hierarchical VAEs, GMVAE, the AR prior of VQ-VAE). The NN generalises a finite table to a continuum of components.',56)
+    mkBubble('<b>Q5 — (1, e≈2.718).</b> Sigmoid ∈ (0,1) ⇒ exp ∈ ($e^0$, $e^1$). Deduction: this decoder can never output a variance below 1 — a design limitation.',38),
+    mkBubble('<b>Q6 — A, C, D.</b> B is false: priors can be learned (hierarchical VAEs, GMVAE, the AR prior of VQ-VAE). The NN generalises a finite table to a continuum of components.',60)
   ]
 },
 
@@ -138,8 +138,8 @@ var GROUPS = [
   ],
   bubbles:[
     mkBubble('<b>Q10 — B.</b> For concave $f$: $f(\\mathbb E[w])\\ge\\mathbb E[f(w)]$. Equality iff $p(x,z)/q(z)$ is constant in $z$, i.e. $q=p(z|x)$.',10),
-    mkBubble('<b>Q11 — 4.5; −101.2.</b> $\\log p(x)=\\text{ELBO}+D_{KL}(q\\|p(z|x))$. Changing only φ leaves $\\log p_\\theta(x)$ fixed, so the ELBO rises by exactly the KL reduction.',38),
-    mkBubble('<b>Q12 — A, B, C.</b> Any $q$ gives a valid bound. The gap $D_{KL}(p(z)\\|p(z|x))$ vanishes only if $z$ carries no information about $x$ — i.e. <i>posterior collapse</i>.',56)
+    mkBubble('<b>Q11 — 4.5; −101.2.</b> $\\log p(x)=\\text{ELBO}+D_{KL}(q\\|p(z|x))$. Changing only φ leaves $\\log p_\\theta(x)$ fixed, so the ELBO rises by exactly the KL reduction.',37),
+    mkBubble('<b>Q12 — A, B, C.</b> Any $q$ gives a valid bound. The gap $D_{KL}(p(z)\\|p(z|x))$ vanishes only if $z$ carries no information about $x$ — i.e. <i>posterior collapse</i>.',62)
   ]
 },
 
@@ -233,7 +233,7 @@ var GROUPS = [
   bubbles:[
     mkBubble('<b>Q20 — 0.5; 0.568; 1.068.</b> ½(1+1−0−1)=0.5; ½(0+e⁻²+2−1)=0.568. Diagonal Gaussians factorise, so the KLs add.',10),
     mkBubble('<b>Q21 — 0.5.</b> $-\\log p(x|z)=\\|x-\\mu\\|^2/(2s^2)+$const, equal to MSE iff $2s^2=1$. Generally MSE + β·KL ⇔ $s^2=\\beta/2$: decoder variance and β are one knob.',30),
-    mkBubble('<b>Q22 — T, T, F.</b> θ appears only in $p(x|z)$. $\\log p(x,z)=\\log p(z)+\\log p(x|z)$ links the two forms. Reconstruction alone favours σ→0 (deterministic $z$).',52)
+    mkBubble('<b>Q22 — T, T, F.</b> θ appears only in $p(x|z)$. $\\log p(x,z)=\\log p(z)+\\log p(x|z)$ links the two forms. Reconstruction alone favours σ→0 (deterministic $z$).',63)
   ]
 },
 
@@ -254,7 +254,7 @@ var GROUPS = [
       ans:1 }
   ],
   bubbles:[
-    mkBubble('<b>Q23 — A, B, C, B.</b> β→∞ makes KL dominate, so $q(z|x)\\to p(z)$ for every $x$: the same picture as "KL only" — posterior collapse.',9),
+    mkBubble('<b>Q23 — A, B, C, B.</b> β→∞ makes KL dominate, so $q(z|x)\\to p(z)$ for every $x$: the same picture as "KL only" — posterior collapse.',35),
     mkBubble('<b>Q24 — B.</b> Without KL pressure σ→0 (dots) and means drift. The union of ellipses no longer fills the prior, so $z\\sim\\mathcal N(0,I)$ lands in holes → garbage samples.',50)
   ]
 },
@@ -331,7 +331,7 @@ var GROUPS = [
   bubbles:[
     mkBubble('<b>Q31 — 6.238; 0; 0.693.</b> ln 512 = 9 ln 2; entropies 0, ln K, ln 2.',10),
     mkBubble('<b>Q32 — 2; 2.</b> Scores −0.593, −0.204, −1.409 → argmax 2. At τ→0 softmax = argmax, but it is differentiable for τ>0.',28),
-    mkBubble('<b>Q33 — 0.25; Gumbel; ST; dropped.</b> Jang et al.: uniform as τ→∞, one-hot as τ→0 (low τ ⇒ high-variance gradients, so anneal). dVAE = weighted die; VQ = pointer snapping to a pin; KL = log K is constant.',48)
+    mkBubble('<b>Q33 — 0.25; Gumbel; ST; dropped.</b> Jang et al.: uniform as τ→∞, one-hot as τ→0 (low τ ⇒ high-variance gradients, so anneal). dVAE = weighted die; VQ = pointer snapping to a pin; KL = log K is constant.',55)
   ]
 },
 
@@ -383,7 +383,7 @@ var GROUPS = [
   bubbles:[
     mkBubble('<b>Q36 — 8192; 512; 9216; ≈42.7.</b> 8·32·32 rows; 1024 indices × 9 bits; 393,216 / 9216 = 42.67 (van den Oord et al. §4.2 report "≈ 42.6 in bits").',10),
     mkBubble('<b>Q37 — A.</b> The true distribution over indices is far from uniform and spatially correlated. van den Oord et al. §3.3 keep the prior uniform during training, then fit an AR prior (PixelCNN for images, WaveNet for audio); VQ-VAE-2: top/bottom hierarchy.',29),
-    mkBubble('<b>Q38 — model answer.</b> Only the nearest code is pulled, so far-initialised codes never move. Fixes: k-means init, EMA updates, restart dead codes from encoder outputs, entropy penalties.',63)
+    mkBubble('<b>Q38 — model answer.</b> Only the nearest code is pulled, so far-initialised codes never move. Fixes: k-means init, EMA updates, restart dead codes from encoder outputs, entropy penalties.',60)
   ]
 }
 
