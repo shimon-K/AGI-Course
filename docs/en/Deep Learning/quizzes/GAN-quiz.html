@@ -69,7 +69,7 @@ var GROUPS = [
         'It has strictly higher expected log-likelihood than $p_{data}$ itself'
       ],
       ans:1 },
-    { type:'slider', x:WIDGET_X, y:40, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:45, w:QW, fs:10,
       question:'<b>Q2.</b> New case: $p_\\theta=0.2\\,p_{data}+0.8\\,p_{noise}$. Largest possible gap $\\mathbb{E}_{p_{data}}[\\log p_{data}]-\\mathbb{E}_{p_{data}}[\\log p_\\theta]$ in nats?',
       min:0, max:5, step:0.01, ans:1.61, tol:0.03, unit:' nats' },
     { type:'label', x:LABEL_X, y:57, fs:10,
@@ -112,7 +112,7 @@ var GROUPS = [
         'The discriminator is updated by gradient descent on $V$'
       ],
       ans:[0,1,3] },
-    { type:'cloze', x:WIDGET_X, y:44, w:QW, fs:10, lineSpacing:1.9,
+    { type:'cloze', x:WIDGET_X, y:50, w:QW, fs:10, lineSpacing:1.9,
       parts:[
         '<b>Q2.</b> In $\\min_G\\max_D V(D,G)$ the discriminator ',
         { blank:true, type:'select', options:['maximizes','minimizes'], ans:'maximizes', w:95, fs:10 },
@@ -124,7 +124,7 @@ var GROUPS = [
         { blank:true, ans:'0.5', w:50, fs:10 },
         ' for every $x$.'
       ] },
-    { type:'slider', x:WIDGET_X, y:59, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:75, w:QW, fs:10,
       question:'<b>Q3.</b> New case: at a point $x$, $p_{data}(x)=0.6$ and $p_G(x)=0.2$. What does the optimal discriminator output, $D^*_G(x)$?',
       min:0, max:1, step:0.01, ans:0.75, tol:0.01, unit:'' }
   ],
@@ -154,7 +154,7 @@ var GROUPS = [
         'Generator update: the gradient of $D$ pushes $G(z)$ toward regions $D$ rates as real'
       ],
       ans:[2,0,3,1] },
-    { type:'radio', x:WIDGET_X, y:56, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:66, w:QW, fs:10,
       question:'<b>Q3.</b> New case: $G$’s samples have support disjoint from $p_{data}$, and $D$ is optimal. What is $C(G)=\\max_D V(D,G)$?',
       choices:[ '$-\\log 4$', '$0$', '$\\log 2$', '$+\\infty$' ],
       ans:1 }
@@ -290,7 +290,7 @@ var GROUPS = [
       left:[ '$u\\log u$', '$-\\log u$', '$(u-1)^2$', '$\\tfrac12|u-1|$', '$(\\sqrt{u}-1)^2$' ],
       right:[ 'Total variation', 'KL', 'Pearson $\\chi^2$', 'Squared Hellinger', 'Reverse KL' ],
       ans:[1,4,2,0,3] },
-    { type:'radio', x:WIDGET_X, y:44, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:60, w:QW, fs:10,
       question:'<b>Q2.</b> The Fenchel conjugate $f^*(t)=\\sup_u\\,(ut-f(u))$ of the KL generator $f(u)=u\\log u$ is:',
       choices:[ '$f^*(t)=e^{t-1}$', '$f^*(t)=\\log t$', '$f^*(t)=t\\log t$', '$f^*(t)=-1-\\log(-t)$' ],
       ans:0 }
@@ -311,7 +311,7 @@ var GROUPS = [
     { type:'slider', x:WIDGET_X, y:10, w:QW, fs:10,
       question:'<b>Q1.</b> New case: $p=(0.5,\\,0.5,\\,0)$ and $q=(0.25,\\,0.25,\\,0.5)$ on 3 outcomes. Compute $D_f(p\\|q)$ with $f(u)=\\tfrac12|u-1|$ (total variation).',
       min:0, max:1, step:0.01, ans:0.5, tol:0.01, unit:'' },
-    { type:'checkbox', x:WIDGET_X, y:27, w:QW, fs:10,
+    { type:'checkbox', x:WIDGET_X, y:44, w:QW, fs:10,
       question:'<b>Q2.</b> f-GAN bound $D_f(p\\|q)\\ge\\sup_{T\\in\\mathcal{T}}\\big(\\mathbb{E}_p[T]-\\mathbb{E}_q[f^*(T)]\\big)$. Select ALL correct.',
       choices:[
         'The inequality holds for every function $T$ in the class',
@@ -345,10 +345,10 @@ var GROUPS = [
         { blank:true, ans:'0.5', w:50, fs:10 },
         '.'
       ] },
-    { type:'slider', x:WIDGET_X, y:24, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:40, w:QW, fs:10,
       question:'<b>Q2.</b> New case (1-D): $W_1\\big(\\mathcal{N}(2,1),\\,\\mathcal{N}(-1.5,1)\\big)$ = ?',
       min:0, max:6, step:0.1, ans:3.5, tol:0.05, unit:'' },
-    { type:'radio', x:WIDGET_X, y:40, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:60, w:QW, fs:10,
       question:'<b>Q3.</b> Slide 135: real data near $-5$, fakes near $+5$. The trained GAN discriminator is a sharp step; the WGAN critic is almost linear. Why does this matter for $G$?',
       choices:[
         'Over the fakes the step is flat (zero gradient); the linear critic keeps an informative slope',
@@ -382,7 +382,7 @@ var GROUPS = [
         'Weight clipping lets the critic represent any 1-Lipschitz function'
       ],
       ans:[0,1,2] },
-    { type:'radio', x:WIDGET_X, y:45, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:55, w:QW, fs:10,
       question:'<b>Q2.</b> DiracGAN (slide 151): $p_\\theta=\\delta_\\theta$, data $\\delta_0$, linear $D_\\psi(x)=\\psi x$. With unregularized <i>simultaneous</i> gradient steps, the iterates $(\\theta_k,\\psi_k)$ will:',
       choices:[
         'converge to $(0,0)$ if the learning rate is small enough',
@@ -457,13 +457,13 @@ var GROUPS = [
         'A concatenation of $y$ to the input pixels'
       ],
       ans:1 },
-    { type:'slider', x:WIDGET_X, y:41, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:47, w:QW, fs:10,
       question:'<b>Q2.</b> Conditional BN (slide 140): one layer has 256 channels and there are 10 classes. How many $\\gamma,\\beta$ parameters does it learn? (Plain BN learns 512.)',
       min:0, max:10000, step:10, ans:5120, tol:10, unit:'' },
-    { type:'cloze', x:WIDGET_X, y:58, w:QW, fs:10, lineSpacing:1.6,
+    { type:'cloze', x:WIDGET_X, y:64, w:QW, fs:10, lineSpacing:1.6,
       parts:[
         '<b>Q3.</b> Design a <i>text-to-image</i> cGAN. Where would you inject the sentence embedding in $G$ and $D$, and what extra kind of “fake” pair should $D$ see?<br>',
-        { blank:true, type:'open', w:540, h:60,
+        { blank:true, type:'open', w:540, h:90,
           ans:'Encode the text with a (pretrained) text encoder into a vector y. In G, concatenate y with z at the input and also inject it at many layers through conditional batch norm / AdaIN-style modulation. In D, condition on y with a projection term embed(y)^T phi(x) (or by concatenating y into intermediate features). Train D on real image + matching text (label real), generated image G(z,y) + text (fake), and real image + mismatched text (fake), so that D checks text-image agreement and not only realism.',
           placeholder:'Write your answer here. It will be evaluated by AI…' }
       ] }
@@ -485,7 +485,7 @@ var GROUPS = [
     { type:'slider', x:WIDGET_X, y:10, w:QW, fs:10,
       question:'<b>Q1.</b> ProGAN fade-in with $\\alpha=0.3$: a pixel is 0.80 in the upsampled old output and 0.20 in the new layer’s output. What is the blended value?',
       min:0, max:1, step:0.01, ans:0.62, tol:0.01, unit:'' },
-    { type:'label', x:LABEL_X, y:28, fs:10,
+    { type:'label', x:LABEL_X, y:40, fs:10,
       text:'<b>Q2.</b> LapGAN vs. ProGAN (slide 141): match each property' },
     { type:'match', x:WIDGET_X, y:33, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
       left:[
