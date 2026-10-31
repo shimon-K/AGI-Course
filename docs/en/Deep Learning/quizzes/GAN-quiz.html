@@ -69,7 +69,7 @@ var GROUPS = [
         'It has strictly higher expected log-likelihood than $p_{data}$ itself'
       ],
       ans:1 },
-    { type:'slider', x:WIDGET_X, y:45, w:QW, fs:10,
+    { type:'slider', x:WIDGET_X, y:41, w:QW, fs:10,
       question:'<b>Q2.</b> New case: $p_\\theta=0.2\\,p_{data}+0.8\\,p_{noise}$. Largest possible gap $\\mathbb{E}_{p_{data}}[\\log p_{data}]-\\mathbb{E}_{p_{data}}[\\log p_\\theta]$ in nats?',
       min:0, max:5, step:0.01, ans:1.61, tol:0.03, unit:' nats' },
     { type:'label', x:LABEL_X, y:57, fs:10,
@@ -154,7 +154,7 @@ var GROUPS = [
         'Generator update: the gradient of $D$ pushes $G(z)$ toward regions $D$ rates as real'
       ],
       ans:[2,0,3,1] },
-    { type:'radio', x:WIDGET_X, y:66, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:62, w:QW, fs:10,
       question:'<b>Q3.</b> New case: $G$’s samples have support disjoint from $p_{data}$, and $D$ is optimal. What is $C(G)=\\max_D V(D,G)$?',
       choices:[ '$-\\log 4$', '$0$', '$\\log 2$', '$+\\infty$' ],
       ans:1 }
@@ -290,7 +290,7 @@ var GROUPS = [
       left:[ '$u\\log u$', '$-\\log u$', '$(u-1)^2$', '$\\tfrac12|u-1|$', '$(\\sqrt{u}-1)^2$' ],
       right:[ 'Total variation', 'KL', 'Pearson $\\chi^2$', 'Squared Hellinger', 'Reverse KL' ],
       ans:[1,4,2,0,3] },
-    { type:'radio', x:WIDGET_X, y:60, w:QW, fs:10,
+    { type:'radio', x:WIDGET_X, y:52, w:QW, fs:10,
       question:'<b>Q2.</b> The Fenchel conjugate $f^*(t)=\\sup_u\\,(ut-f(u))$ of the KL generator $f(u)=u\\log u$ is:',
       choices:[ '$f^*(t)=e^{t-1}$', '$f^*(t)=\\log t$', '$f^*(t)=t\\log t$', '$f^*(t)=-1-\\log(-t)$' ],
       ans:0 }
@@ -463,7 +463,7 @@ var GROUPS = [
     { type:'cloze', x:WIDGET_X, y:64, w:QW, fs:10, lineSpacing:1.6,
       parts:[
         '<b>Q3.</b> Design a <i>text-to-image</i> cGAN. Where would you inject the sentence embedding in $G$ and $D$, and what extra kind of “fake” pair should $D$ see?<br>',
-        { blank:true, type:'open', w:540, h:90,
+        { blank:true, type:'open', w:540, h:70,
           ans:'Encode the text with a (pretrained) text encoder into a vector y. In G, concatenate y with z at the input and also inject it at many layers through conditional batch norm / AdaIN-style modulation. In D, condition on y with a projection term embed(y)^T phi(x) (or by concatenating y into intermediate features). Train D on real image + matching text (label real), generated image G(z,y) + text (fake), and real image + mismatched text (fake), so that D checks text-image agreement and not only realism.',
           placeholder:'Write your answer here. It will be evaluated by AI…' }
       ] }
@@ -487,7 +487,7 @@ var GROUPS = [
       min:0, max:1, step:0.01, ans:0.62, tol:0.01, unit:'' },
     { type:'label', x:LABEL_X, y:40, fs:10,
       text:'<b>Q2.</b> LapGAN vs. ProGAN (slide 141): match each property' },
-    { type:'match', x:WIDGET_X, y:33, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
+    { type:'match', x:WIDGET_X, y:45, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
       left:[
         'A separate generator and critic for every pyramid level',
         'One G and one D grown from 4×4 up to 1024×1024',
@@ -553,9 +553,9 @@ var GROUPS = [
         'A random face unrelated to A and B'
       ],
       ans:0 },
-    { type:'label', x:LABEL_X, y:43, fs:10,
+    { type:'label', x:LABEL_X, y:53, fs:10,
       text:'<b>Q2.</b> Slide 148 generator diagram: match each component to its role' },
-    { type:'match', x:WIDGET_X, y:48, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
+    { type:'match', x:WIDGET_X, y:57, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
       left:[
         'Mapping network (8 FC layers)',
         '"A" boxes (learned affine)',
@@ -594,9 +594,9 @@ var GROUPS = [
         'It replaces the quantization step entirely'
       ],
       ans:0 },
-    { type:'label', x:LABEL_X, y:43, fs:10,
+    { type:'label', x:LABEL_X, y:53, fs:10,
       text:'<b>Q2.</b> Slide 151 tree “learning by comparison”: classify each item' },
-    { type:'match', x:WIDGET_X, y:48, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
+    { type:'match', x:WIDGET_X, y:57, w:520, fs:9, dotSize:8, dotGap:4, colGap:36,
       left:[
         'Original GAN (Goodfellow)',
         'f-GAN',
