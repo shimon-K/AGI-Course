@@ -90,7 +90,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: B.</b> $\\log p_\\theta\\ge\\log p_{data}-\\log 100$, and $D_{KL}\\ge0$ gives the upper bound, so the average LL is within 4.6 nats of optimal. Since $\\log p_{data}$ grows with $n$, that gap is negligible, yet 99% of the samples are noise. High likelihood does not mean good samples.', 10),
-    mkBubble('<b>Answer: $\\log 5\\approx1.61$ nats.</b> $\\log p_\\theta\\ge\\log 0.2+\\log p_{data}$, so the gap is at most $-\\log 0.2=\\log 5$. In general, a mixing weight $w$ gives a gap of at most $\\log(1/w)$, a constant that does not depend on dimension.', 40),
+    mkBubble('<b>Answer: $\\log 5\\approx1.61$ nats.</b> $\\log p_\\theta\\ge\\log 0.2+\\log p_{data}$, so the gap is at most $-\\log 0.2=\\log 5$. In general, a mixing weight $w$ gives a gap of at most $\\log(1/w)$, a constant that does not depend on dimension.', 32),
     mkBubble('<b>Answer: A→means, B→variances, C→higher-order/learned.</b> When the first two moments coincide (C), mean and std tests fail. In high dimensions you cannot hand-craft such statistics, so GANs <i>learn</i> the statistic with a classifier (the discriminator).', 57)
   ]
 },
@@ -130,7 +130,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 1, 2, 4.</b> $D$ is a binary real/fake classifier. $V$ is the Bernoulli log-likelihood, i.e. minus the BCE, so $D$ <i>ascends</i> it. $G$ appears only in the fake term and never needs $p_\\theta(x)$, only samples. That is why GANs are called likelihood-free.', 10),
-    mkBubble('<b>Answer: maximizes · minimizes · ascent · 0.5.</b> $D$ maximizes the log-likelihood of the correct labels and $G$ minimizes it. When $p_G=p_{data}$, $D^*=p_{data}/(p_{data}+p_G)=\\tfrac12$, so the discriminator can only guess.', 44),
+    mkBubble('<b>Answer: maximizes · minimizes · ascent · 0.5.</b> $D$ maximizes the log-likelihood of the correct labels and $G$ minimizes it. When $p_G=p_{data}$, $D^*=p_{data}/(p_{data}+p_G)=\\tfrac12$, so the discriminator can only guess.', 35),
     mkBubble('<b>Answer: 0.75.</b> $a\\log y+b\\log(1-y)$ is maximized at $y=a/(a+b)$. With $a=0.6$ and $b=0.2$, $D^*=0.6/0.8=0.75$. $D^*$ is the posterior probability of “real” under equal priors, and the density ratio is $D^*/(1-D^*)=3$.', 59)
   ]
 },
@@ -161,7 +161,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: $-\\log 4\\approx-1.386$.</b> $\\mathbb{E}[\\log\\tfrac12]+\\mathbb{E}[\\log\\tfrac12]=-2\\log 2$. In general $C(G)=2\\,JSD(p_{data}\\|p_G)-\\log 4$, which is smallest when $JSD=0$.', 10),
-    mkBubble('<b>Answer: current state → update D → update G → convergence.</b> (a) Black dots are $p_{data}$, green is $p_G$, blue dashed is $D$. (b) $D$ moves toward $D^*$. (c) $\\nabla D$ moves $G(z)$ toward real regions (arrows z→x). (d) $p_G=p_{data}$ and $D\\equiv\\tfrac12$.', 25),
+    mkBubble('<b>Answer: current state → update D → update G → convergence.</b> (a) Black dots are $p_{data}$, green is $p_G$, blue dashed is $D$. (b) $D$ moves toward $D^*$. (c) $\\nabla D$ moves $G(z)$ toward real regions (arrows z→x). (d) $p_G=p_{data}$ and $D\\equiv\\tfrac12$.', 35),
     mkBubble('<b>Answer: 0.</b> With disjoint supports $JSD=\\log 2$ (its maximum), so $C(G)=2\\log 2-\\log 4=0$. Moving $G$ slightly does not change this value, so there is no useful gradient. This motivates WGAN (slide 132). The theory also assumes $D$ is optimal over all functions, which real networks are not.', 56)
   ]
 },
@@ -198,7 +198,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 9.</b> $1/(1-D)=1.11$ versus $1/D=10$, a ratio of 9. With respect to the logit $a$ ($D=\\sigma(a)$) the gradients are $-D=-0.1$ versus $-(1-D)=-0.9$, again a ratio of 9. As $D\\to0$ the minimax gradient vanishes, which is the flat blue curve.', 10),
-    mkBubble('<b>Answer: 1, 2, 3.</b> Only $G$’s loss changes: it minimizes $-\\log D(G(z))$ instead of $\\log(1-D(G(z)))$. Both push $D(G(z))$ up and share the fixed point, but the players no longer optimize one shared $V$, so the game is non-zero-sum. The NS loss does not cure mode collapse.', 27),
+    mkBubble('<b>Answer: 1, 2, 3.</b> Only $G$’s loss changes: it minimizes $-\\log D(G(z))$ instead of $\\log(1-D(G(z)))$. Both push $D(G(z))$ up and share the fixed point, but the players no longer optimize one shared $V$, so the game is non-zero-sum. The NS loss does not cure mode collapse.', 36),
     mkBubble('<b>Answer: A.</b> The JSD interpretation needs $D=D^*_G$, and $k$ inner steps approximate that (Goodfellow used $k=1$). A $D$ that is too strong saturates and starves $G$ of gradient, so this is a balance and a larger $k$ is not always better.', 61)
   ]
 },
@@ -240,8 +240,8 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: B.</b> $z$ is projected and reshaped to 4×4×1024, then transposed convs (k=5, s=2) take it through 512, 256 and 128 channels to a 64×64×3 output. There is BN in both G and D, no pooling, and LeakyReLU in D (Radford et al., 2016).', 10),
-    mkBubble('<b>Answer: 6 · convolutions.</b> 4→8→16→32→64→128→256 is 6 doublings, since $\\log_2(256/4)=6$. DCGAN replaces pooling with strided convs in D and fractionally-strided convs in G, so both networks learn their own resampling.', 39),
-    mkBubble('<b>Answer: 1, 2, 3.</b> The pros are a likelihood-free loss, any $G_\\theta$ being a valid sampler, and one forward pass per sample. The cons are no tractable likelihood and oscillating minimax losses (the slide 127 Adam plot), so there is no stopping rule like validation NLL.', 54)
+    mkBubble('<b>Answer: 6 · convolutions.</b> 4→8→16→32→64→128→256 is 6 doublings, since $\\log_2(256/4)=6$. DCGAN replaces pooling with strided convs in D and fractionally-strided convs in G, so both networks learn their own resampling.', 35),
+    mkBubble('<b>Answer: 1, 2, 3.</b> The pros are a likelihood-free loss, any $G_\\theta$ being a valid sampler, and one forward pass per sample. The cons are no tractable likelihood and oscillating minimax losses (the slide 127 Adam plot), so there is no stopping rule like validation NLL.', 60)
   ]
 },
 
@@ -324,7 +324,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 0.5.</b> $D_{TV}=\\sum_x q\\,\\tfrac12|p/q-1|=\\tfrac12\\sum_x|p-q|=\\tfrac12(0.25+0.25+0.5)=0.5$. This is finite because supp$(p)\\subseteq$ supp$(q)$. $KL(q\\|p)$ would be ∞, which is the support issue on slide 132.', 10),
-    mkBubble('<b>Answer: 1, 2, 4.</b> The bound follows from $f=f^{**}$ and swapping sup and expectation; the pointwise maximizer is $T^*=f^{\\prime}(p/q)$. Only expectations under $p$ and $q$ appear, so samples suffice. $T_\\phi$ <i>tightens</i> (maximizes) the bound and $G_\\theta$ minimizes it. The original GAN is a special case.', 27)
+    mkBubble('<b>Answer: 1, 2, 4.</b> The bound follows from $f=f^{**}$ and swapping sup and expectation; the pointwise maximizer is $T^*=f^{\\prime}(p/q)$. Only expectations under $p$ and $q$ appear, so samples suffice. $T_\\phi$ <i>tightens</i> (maximizes) the bound and $G_\\theta$ minimizes it. The original GAN is a special case.', 44)
   ]
 },
 
@@ -360,8 +360,8 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: ∞ · log 2 · 0.5.</b> For any θ≠0 the supports are disjoint, so KL blows up and JSD is stuck at log 2, a constant with zero gradient. The earth-mover cost is mass 1 × distance |θ|, which is continuous in θ.', 10),
-    mkBubble('<b>Answer: 3.5.</b> With equal variances the optimal plan is the translation $x\\mapsto x-3.5$, so every unit of mass moves $|\\mu_1-\\mu_2|=3.5$. In 1-D, $W_1=\\int|F_1-F_2|\\,dx$.', 24),
-    mkBubble('<b>Answer: A.</b> $G$ learns through $\\nabla_x D$ at its samples. A saturated sigmoid is flat near +5, so the gradients vanish. The 1-Lipschitz critic has slope ≈1, so it still says “move left” when the distributions do not overlap. This gives more stable training and less mode collapse.', 40)
+    mkBubble('<b>Answer: 3.5.</b> With equal variances the optimal plan is the translation $x\\mapsto x-3.5$, so every unit of mass moves $|\\mu_1-\\mu_2|=3.5$. In 1-D, $W_1=\\int|F_1-F_2|\\,dx$.', 38),
+    mkBubble('<b>Answer: A.</b> $G$ learns through $\\nabla_x D$ at its samples. A saturated sigmoid is flat near +5, so the gradients vanish. The 1-Lipschitz critic has slope ≈1, so it still says “move left” when the distributions do not overlap. This gives more stable training and less mode collapse.', 60)
   ]
 },
 
@@ -394,7 +394,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 1, 2, 3.</b> Arjovsky et al. (RMSProp, lr 5e-5) call clipping “a clearly terrible way to enforce a Lipschitz constraint”. Clipping biases the critic toward overly simple functions, and WGAN-GP (Adam, λ=10) fixes this. The critic outputs an unbounded score, not a probability.', 10),
-    mkBubble('<b>Answer: B.</b> At the equilibrium the Jacobian has purely imaginary eigenvalues $\\pm f^{\\prime}(0)i$. The continuous dynamics circle the equilibrium, and each Euler step multiplies the radius by $\\sqrt{1+h^2f^{\\prime}(0)^2}>1$ (Mescheder et al., 2018). Gradient penalties or instance noise restore convergence.', 45)
+    mkBubble('<b>Answer: B.</b> At the equilibrium the Jacobian has purely imaginary eigenvalues $\\pm f^{\\prime}(0)i$. The continuous dynamics circle the equilibrium, and each Euler step multiplies the radius by $\\sqrt{1+h^2f^{\\prime}(0)^2}>1$ (Mescheder et al., 2018). Gradient penalties or instance noise restore convergence.', 50)
   ]
 },
 
@@ -437,7 +437,7 @@ var GROUPS = [
   bubbles: [
     mkBubble('<b>Answer: A.</b> To fool a perfect joint discriminator the two joint distributions must match, which forces $E$ and $G$ to invert each other (Donahue et al., Theorem 2: “$E=G^{-1}$ almost everywhere”), even though $E$ never sees $G(z)$ and $G$ never sees $x$. In practice they are rarely exact inverses. There is no ELBO and no reconstruction term.', 10),
     mkBubble('<b>Answer: woman with hat · 3 · stable.</b> The difference isolates a “hat” direction in $z$-space, and adding it to a woman’s code transfers the attribute. Single $z$’s are noisy, so DCGAN averaged 3 exemplars per concept.', 41),
-    mkBubble('<b>Answer: A.</b> $D$ must learn rich features to separate real from fake, so its penultimate layer is a useful representation (DCGAN used it for CIFAR-10 classification). Change of variables needs an invertible map, which flows have and GAN generators do not.', 56)
+    mkBubble('<b>Answer: A.</b> $D$ must learn rich features to separate real from fake, so its penultimate layer is a useful representation (DCGAN used it for CIFAR-10 classification). Change of variables needs an invertible map, which flows have and GAN generators do not.', 62)
   ]
 },
 
@@ -500,7 +500,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: 0.62.</b> $\\alpha\\cdot\\text{new}+(1-\\alpha)\\cdot\\text{old}=0.3(0.2)+0.7(0.8)=0.62$. At α=0.3 the new layers act mostly as a residual, and as α→1 the skip path disappears. Old layers stay trainable throughout.', 10),
-    mkBubble('<b>Answer:</b> LapGAN uses a separate $(G_k,D_k)$ per level, and $G_k$ outputs a residual $\\tilde h_k$ added to the upsampled image. ProGAN uses one G and one D grown from 4×4 to 1024×1024 with α fade-in. Both generate coarse-to-fine, which stabilizes high-resolution training.', 28)
+    mkBubble('<b>Answer:</b> LapGAN uses a separate $(G_k,D_k)$ per level, and $G_k$ outputs a residual $\\tilde h_k$ added to the upsampled image. ProGAN uses one G and one D grown from 4×4 to 1024×1024 with α fade-in. Both generate coarse-to-fine, which stabilizes high-resolution training.', 48)
   ]
 },
 
@@ -574,7 +574,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: A.</b> Coarse layers (4²–8²) set pose, general hair style, face shape and eyeglasses. Middle layers (16²–32²) set finer facial features, and fine layers (64²–1024²) set the color scheme and micro-structure (Karras et al., 2019, Fig. 3). A crossover at a fine level would copy only B’s colors.', 10),
-    mkBubble('<b>Answer:</b> The 8-FC mapping network takes $z$ to $w$; A produces the per-layer AdaIN $(y_s,y_b)$; B adds scaled per-pixel noise; the learned constant replaces the input $z$; and mixing regularization keeps styles local. Only G was redesigned; Karras et al.: “We do not modify the discriminator or the loss function in any way.”', 43)
+    mkBubble('<b>Answer:</b> The 8-FC mapping network takes $z$ to $w$; A produces the per-layer AdaIN $(y_s,y_b)$; B adds scaled per-pixel noise; the learned constant replaces the input $z$; and mixing regularization keeps styles local. Only G was redesigned; Karras et al.: “We do not modify the discriminator or the loss function in any way.”', 58)
   ]
 },
 
@@ -609,7 +609,7 @@ var GROUPS = [
   ],
   bubbles: [
     mkBubble('<b>Answer: A.</b> With strong downsampling the decoder must invent textures, and L2 regresses to the mean (blur). A grid of local real/fake scores plus the perceptual loss rewards sharp, realistic patches. This gives a short code sequence for the autoregressive prior $p(s)=\\prod_i p(s_i|s_{<i})$.', 10),
-    mkBubble('<b>Answer:</b> Ratios: GAN, f-GAN and class-probability estimation, since $D^*$ encodes $p/(p+q)$. Differences: WGAN and MMD/moment matching, which are integral probability metrics $\\sup_f\\mathbb{E}_p f-\\mathbb{E}_q f$ and stay well-defined even when the supports are disjoint.', 43)
+    mkBubble('<b>Answer:</b> Ratios: GAN, f-GAN and class-probability estimation, since $D^*$ encodes $p/(p+q)$. Differences: WGAN and MMD/moment matching, which are integral probability metrics $\\sup_f\\mathbb{E}_p f-\\mathbb{E}_q f$ and stay well-defined even when the supports are disjoint.', 53)
   ]
 }
 
