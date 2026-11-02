@@ -243,10 +243,9 @@
             {% assign page_prev = site.pages | where: "path", page_prev_path | first %}
 
 
-            <li><a href="https://shimon-k.github.io/" title="Home"><i class="fa fa-home fa-2x"></i></a></li>
-
-            <!-- <li><a href="{{ site.github.repo }}"><img src="{{ site.baseurl }}/static/GitHub.png" /></a></li> -->
-
+            <li style="align-items: center; gap: 16px;"><a href="https://shimon-k.github.io/" title="Home"><i class="fa fa-home" style="font-size: 32px;"></i></a><a href="{{ site.github.repo }}" title="GitHub"><img src="{{ site.baseurl }}/static/GitHub.png" /></a></li>
+            <!-- <li><a href="https://shimon-k.github.io/" title="Home"><i class="fa fa-home fa-2x"></i></a></li>
+            <li><a href="{{ site.github.repo }}"><img src="{{ site.baseurl }}/static/GitHub.png" /></a></li> -->
             <!-- Here's some debug info: -->
             <!--current_index: {{ current_pagelist_index }}-->
             <!--next_page: {{ page_next_path }} -->
